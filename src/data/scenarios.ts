@@ -149,6 +149,31 @@ Requirements:
 
 The flow: Register Lightning Address → complete an action → receive sats payout → see earnings on leaderboard.`,
       },
+      {
+        title: "Live Stream Donation Meter",
+        description:
+          "Build a live streaming platform where viewers stream sats to creators as they watch.",
+        prompt: `Build a live streaming donation meter where viewers continuously stream sats to the creator while watching.
+
+Requirements:
+- A video player mockup (use a placeholder or video element)
+- Creator profile with Lightning Address and suggested streaming rate (e.g. 20 sats/minute)
+- When the viewer starts watching:
+  - Begin streaming micro-payments to the creator's Lightning Address at regular intervals
+  - Display a prominent streaming meter showing sats/minute being sent
+  - Show a live counter of total sats streamed in this session
+- Allow viewers to adjust their stream rate with a slider (1-100 sats/minute)
+- Include a "Boost" button for sending a one-time larger payment (e.g. 1000 sats)
+- Display a live activity feed of all streaming payments and boosts
+- Show viewer stats: watch time, total streamed, average rate
+- When the stream is paused or viewer leaves, stop the payment stream
+- Include a leaderboard showing top supporters by total sats sent
+- Display creator stats: total viewers streaming, total sats/minute incoming, session total
+- Use React and TypeScript
+- Write tests using vitest and playwright. Take screenshots and review the screenshots.
+
+The flow: Start watching → streaming begins automatically → adjust rate or boost → pause stops streaming → resume continues → see session totals.`,
+      },
     ],
   },
   {
