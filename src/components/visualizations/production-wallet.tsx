@@ -192,7 +192,7 @@ export function ProductionWallet() {
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Rizful</CardTitle>
@@ -252,6 +252,37 @@ export function ProductionWallet() {
                   rel="noopener noreferrer"
                 >
                   Visit CoinOS
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">lncurl.lol</CardTitle>
+              <CardDescription>Agent-first custodial wallet</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-1 text-xs text-orange-600">
+                  Custodial
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-1 text-xs text-purple-600">
+                  Agent-first
+                </span>
+              </div>
+              <p className="text-muted-foreground">
+                An agent-first custodial Lightning wallet service. Create a
+                wallet with one HTTP call.
+              </p>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <a
+                  href="https://lncurl.lol/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Visit lncurl.lol
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </Button>
