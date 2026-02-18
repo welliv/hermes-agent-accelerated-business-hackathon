@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { scenarios } from "@/data/scenarios";
 import { AlbyIcon } from "@/icons/AlbyIcon";
+import { BitcoinConnectIcon } from "@/icons/BitcoinConnectIcon";
 
 const externalLinks = [
   {
@@ -57,10 +58,10 @@ export function AppSidebar() {
   const scenarioId = location.pathname.split("/").filter(Boolean)[0];
 
   const regularScenarios = scenarios.filter(
-    (s) => !s.section || s.section === "scenarios"
+    (s) => !s.section || s.section === "scenarios",
   );
   const bitcoinConnectScenarios = scenarios.filter(
-    (s) => s.section === "bitcoin-connect"
+    (s) => s.section === "bitcoin-connect",
   );
 
   return (
@@ -84,10 +85,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={!scenarioId}
-                >
+                <SidebarMenuButton asChild isActive={!scenarioId}>
                   <Link to="/">
                     <span>👋</span>
                     <span>Getting Started</span>
@@ -110,10 +108,13 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
         {/* Bitcoin Connect Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Bitcoin Connect</SidebarGroupLabel>
+        <SidebarGroup className="-mt-4">
+          <SidebarGroupLabel className="-mb-1">
+            <div title="Bitcoin Connect: let bitcoin surf the web">
+              <BitcoinConnectIcon className="size-20" />
+            </div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {bitcoinConnectScenarios.map((scenario) => (

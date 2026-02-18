@@ -31,22 +31,27 @@ export function ConnectWalletScenario() {
   const modalOpenedTxIdRef = useRef<string | null>(null);
   const providerRef = useRef<WebLNProvider | null>(null);
 
-  const { initializeWallets, getWallet, areAllWalletsConnected } =
-    useWalletStore();
+  const {
+    initializeWallets,
+    getWallet,
+    areAllWalletsConnected,
+    setWalletStatus,
+  } = useWalletStore();
   const { addTransaction, updateTransaction } = useTransactionStore();
 
   const bobWallet = getWallet("bob");
   const bobConnected = areAllWalletsConnected(["bob"]);
 
-  // Initialize Bob's wallet on mount
+  // Initialize wallets on mount
   useEffect(() => {
-    initializeWallets(["bob"]);
+    initializeWallets(["alice", "bob"]);
   }, [initializeWallets]);
 
   useEffect(() => {
     // Subscribe to connection events
     const unsubConnected = onConnected(async (provider) => {
       setIsConnected(true);
+      setWalletStatus("alice", "connected");
       setIsLoading(true);
       providerRef.current = provider;
 
@@ -90,6 +95,7 @@ export function ConnectWalletScenario() {
 
     const unsubDisconnected = onDisconnected(() => {
       setIsConnected(false);
+      setWalletStatus("alice", "disconnected");
       setWalletInfo(null);
       providerRef.current = null;
 
@@ -282,7 +288,7 @@ function PayBobSection({
       toWallet: "bob",
       amount: satoshi,
       description: `Alice paying ${satoshi} sats to Bob via Bitcoin Connect...`,
-      snippetIds: ["bc-launch-modal"],
+      snippetIds: ["pay-lightning-address"],
     });
 
     const requestFlowStepId = addFlowStep({
@@ -291,7 +297,7 @@ function PayBobSection({
       label: `Requesting invoice from ${bobLightningAddress}...`,
       direction: "right",
       status: "pending",
-      snippetIds: ["request-invoice-from-address"],
+      snippetIds: ["pay-lightning-address"],
     });
 
     let payFlowStepId = "";
@@ -317,7 +323,7 @@ function PayBobSection({
         label: "Paying via Bitcoin Connect...",
         direction: "right",
         status: "pending",
-        snippetIds: ["bc-launch-modal"],
+        snippetIds: ["pay-lightning-address"],
       });
 
       await provider.sendPayment(invoice.paymentRequest);

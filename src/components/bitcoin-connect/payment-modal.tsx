@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   launchPaymentModal,
   refreshBalance,
+  onConnected,
+  onDisconnected,
 } from "@getalby/bitcoin-connect-react";
 import type { SendPaymentResponse } from "@webbtc/webln-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +30,7 @@ export function PaymentModalScenario() {
     areAllWalletsConnected,
     getNWCClient,
     setWalletBalance,
+    setWalletStatus,
   } = useWalletStore();
   const {
     addTransaction,
@@ -48,15 +51,64 @@ export function PaymentModalScenario() {
     }
   }, []);
 
-  // Initialize Bob's wallet on mount
+  // Initialize wallets on mount
   useEffect(() => {
-    initializeWallets(["bob"]);
+    initializeWallets(["alice", "bob"]);
   }, [initializeWallets]);
+
+  // Sync Alice's Bitcoin Connect state into the wallet store
+  useEffect(() => {
+    const unsubConnected = onConnected(() => setWalletStatus("alice", "connected"));
+    const unsubDisconnected = onDisconnected(() => setWalletStatus("alice", "disconnected"));
+    return () => { unsubConnected(); unsubDisconnected(); };
+  }, [setWalletStatus]);
 
   // Cleanup polling on unmount
   useEffect(() => {
     return () => stopPolling();
   }, [stopPolling]);
+
+  const handlePaymentComplete = useCallback(async (amountSats: number, isExternal: boolean) => {
+    stopPolling();
+    setPaidRef.current = null;
+    setIsPaid(true);
+    setIsProcessing(false);
+
+    addTransaction({
+      type: "payment_received",
+      status: "success",
+      fromWallet: "alice",
+      toWallet: "bob",
+      amount: amountSats,
+      description: isExternal
+        ? `External wallet paid ${amountSats} sats to Bob via Payment Modal`
+        : `Alice paid ${amountSats} sats to Bob via Payment Modal`,
+      snippetIds: ["bc-launch-payment-modal"],
+    });
+
+    addFlowStep({
+      fromWallet: "alice",
+      toWallet: "bob",
+      label: isExternal ? `External payment: ${amountSats} sats` : `Paid ${amountSats} sats via Payment Modal`,
+      direction: "right",
+      status: "success",
+      snippetIds: ["bc-launch-payment-modal"],
+    });
+
+    try {
+      const bobClient = getNWCClient("bob");
+      if (bobClient) {
+        const bobBalance = await bobClient.getBalance();
+        const bobBalanceSats = Math.floor(bobBalance.balance / 1000);
+        setWalletBalance("bob", bobBalanceSats);
+        addBalanceSnapshot({ walletId: "bob", balance: bobBalanceSats });
+      }
+    } catch (error) {
+      console.error("Failed to refresh Bob's balance:", error);
+    }
+
+    refreshBalance();
+  }, [stopPolling, getNWCClient, addTransaction, addFlowStep, setWalletBalance, addBalanceSnapshot]);
 
   // Start polling to detect external payments (QR code scanned by another wallet)
   const startPollingForExternalPayment = useCallback(
@@ -72,19 +124,17 @@ export function PaymentModalScenario() {
             invoice: invoiceString,
           });
 
-          if (transaction.state === "settled") {
-            stopPolling();
-
-            // Update the modal state via setPaid
+          if (transaction.state === "settled" && pollingRef.current !== null) {
             const response = { preimage: transaction.preimage } as SendPaymentResponse;
             setPaidRef.current?.(response);
+            await handlePaymentComplete(amountSats, true);
           }
         } catch (error) {
           console.error("Error polling for external payment:", error);
         }
       }, 2000);
     },
-    [stopPolling, getNWCClient],
+    [stopPolling, getNWCClient, handlePaymentComplete],
   );
 
   const handleCreateAndPay = async () => {
@@ -149,47 +199,7 @@ export function PaymentModalScenario() {
 
       const { setPaid } = launchPaymentModal({
         invoice: invoiceResponse.invoice,
-        onPaid: async () => {
-          stopPolling();
-          setPaidRef.current = null;
-          setIsPaid(true);
-          setIsProcessing(false);
-
-          addTransaction({
-            type: "payment_received",
-            status: "success",
-            fromWallet: "alice",
-            toWallet: "bob",
-            amount: amount,
-            description: `Alice paid ${amount} sats to Bob via Payment Modal`,
-            snippetIds: ["bc-launch-payment-modal"],
-          });
-
-          addFlowStep({
-            fromWallet: "alice",
-            toWallet: "bob",
-            label: `Paid ${amount} sats via Payment Modal`,
-            direction: "right",
-            status: "success",
-            snippetIds: ["bc-launch-payment-modal"],
-          });
-
-          // Refresh Bob's balance
-          try {
-            const bobClient = getNWCClient("bob");
-            if (bobClient) {
-              const bobBalance = await bobClient.getBalance();
-              const bobBalanceSats = Math.floor(bobBalance.balance / 1000);
-              setWalletBalance("bob", bobBalanceSats);
-              addBalanceSnapshot({ walletId: "bob", balance: bobBalanceSats });
-            }
-          } catch (error) {
-            console.error("Failed to refresh Bob's balance:", error);
-          }
-
-          // Refresh Bitcoin Connect balance
-          refreshBalance();
-        },
+        onPaid: () => handlePaymentComplete(amount, false),
         onCancelled: () => {
           stopPolling();
           setIsProcessing(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { PayButton, refreshBalance } from "@getalby/bitcoin-connect-react";
+import { PayButton, refreshBalance, onConnected, onDisconnected } from "@getalby/bitcoin-connect-react";
 import type { SendPaymentResponse } from "@webbtc/webln-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,12 @@ export function PayButtonScenario() {
   const [payment, setPayment] = useState<SendPaymentResponse | undefined>(undefined);
   const paidAmountRef = useRef<number>(0);
   const pollingRef = useRef<number | null>(null);
+  const isExternalPaymentRef = useRef<boolean>(false);
 
   const initializeWallets = useWalletStore((state) => state.initializeWallets);
   const getNWCClient = useWalletStore((state) => state.getNWCClient);
   const setWalletBalance = useWalletStore((state) => state.setWalletBalance);
+  const setWalletStatus = useWalletStore((state) => state.setWalletStatus);
   const bobWallet = useWalletStore((state) => state.wallets["bob"]);
   const bobConnected = bobWallet?.status === "connected";
 
@@ -43,15 +45,62 @@ export function PayButtonScenario() {
     }
   }, []);
 
-  // Initialize Bob's wallet on mount
+  // Initialize wallets on mount
   useEffect(() => {
-    initializeWallets(["bob"]);
+    initializeWallets(["alice", "bob"]);
   }, [initializeWallets]);
+
+  // Sync Alice's Bitcoin Connect state into the wallet store
+  useEffect(() => {
+    const unsubConnected = onConnected(() => setWalletStatus("alice", "connected"));
+    const unsubDisconnected = onDisconnected(() => setWalletStatus("alice", "disconnected"));
+    return () => { unsubConnected(); unsubDisconnected(); };
+  }, [setWalletStatus]);
 
   // Cleanup polling on unmount
   useEffect(() => {
     return () => stopPolling();
   }, [stopPolling]);
+
+  const handlePaymentComplete = useCallback(async (amountSats: number, isExternal: boolean) => {
+    stopPolling();
+    setIsPaid(true);
+
+    addTransaction({
+      type: "payment_received",
+      status: "success",
+      fromWallet: "alice",
+      toWallet: "bob",
+      amount: amountSats,
+      description: isExternal
+        ? `External wallet paid ${amountSats} sats to Bob via PayButton`
+        : `Alice paid ${amountSats} sats to Bob via PayButton`,
+      snippetIds: isExternal ? ["bc-pay-button", "lookup-invoice"] : ["bc-pay-button"],
+    });
+
+    addFlowStep({
+      fromWallet: "alice",
+      toWallet: "bob",
+      label: isExternal ? `External payment: ${amountSats} sats` : `Paid ${amountSats} sats via PayButton`,
+      direction: "right",
+      status: "success",
+      snippetIds: isExternal ? ["bc-pay-button", "lookup-invoice"] : ["bc-pay-button"],
+    });
+
+    try {
+      const bobClient = getNWCClient("bob");
+      if (bobClient) {
+        const bobBalance = await bobClient.getBalance();
+        const bobBalanceSats = Math.floor(bobBalance.balance / 1000);
+        setWalletBalance("bob", bobBalanceSats);
+        addBalanceSnapshot({ walletId: "bob", balance: bobBalanceSats });
+      }
+    } catch (error) {
+      console.error("Failed to refresh Bob's balance:", error);
+    }
+
+    refreshBalance();
+  }, [stopPolling, addTransaction, addFlowStep, getNWCClient, setWalletBalance, addBalanceSnapshot]);
 
   // Start polling to detect external payments (QR code scanned by another wallet)
   const startPollingForExternalPayment = useCallback(
@@ -67,57 +116,17 @@ export function PayButtonScenario() {
             invoice: invoiceString,
           });
 
-          if (transaction.state === "settled") {
+          if (transaction.state === "settled" && pollingRef.current !== null) {
             stopPolling();
-
-            // Handle payment completion for external payment
-            setIsPaid(true);
+            isExternalPaymentRef.current = true;
             setPayment({ preimage: transaction.preimage } as SendPaymentResponse);
-
-            addTransaction({
-              type: "payment_received",
-              status: "success",
-              fromWallet: "alice",
-              toWallet: "bob",
-              amount: amountSats,
-              description: `External wallet paid ${amountSats} sats to Bob via PayButton`,
-              snippetIds: ["bc-pay-button", "lookup-invoice"],
-            });
-
-            addFlowStep({
-              fromWallet: "alice",
-              toWallet: "bob",
-              label: `External payment: ${amountSats} sats`,
-              direction: "right",
-              status: "success",
-              snippetIds: ["bc-pay-button", "lookup-invoice"],
-            });
-
-            // Refresh Bob's balance
-            try {
-              const bobBalance = await bobClient.getBalance();
-              const bobBalanceSats = Math.floor(bobBalance.balance / 1000);
-              setWalletBalance("bob", bobBalanceSats);
-              addBalanceSnapshot({ walletId: "bob", balance: bobBalanceSats });
-            } catch (error) {
-              console.error("Failed to refresh Bob's balance:", error);
-            }
-
-            refreshBalance();
           }
         } catch (error) {
           console.error("Error polling for external payment:", error);
         }
-      }, 2000); // Poll every 2 seconds
+      }, 2000);
     },
-    [
-      stopPolling,
-      getNWCClient,
-      addTransaction,
-      addFlowStep,
-      setWalletBalance,
-      addBalanceSnapshot,
-    ],
+    [stopPolling, getNWCClient],
   );
 
   const handleClick = useCallback(async () => {
@@ -163,6 +172,7 @@ export function PayButtonScenario() {
 
       // Store the amount for when payment completes
       paidAmountRef.current = amount;
+      isExternalPaymentRef.current = false;
 
       // Start polling for external payments (in case user pays via QR code with another wallet)
       startPollingForExternalPayment(invoiceResponse.invoice, amount);
@@ -189,52 +199,18 @@ export function PayButtonScenario() {
     }
   }, [bobConnected, amount, addTransaction, addFlowStep, getNWCClient, updateTransaction, updateFlowStep, startPollingForExternalPayment]);
 
-  const handlePaymentComplete = useCallback(async () => {
-    setIsPaid(true);
-
-    const paidAmount = paidAmountRef.current;
-
-    addTransaction({
-      type: "payment_received",
-      status: "success",
-      fromWallet: "alice",
-      toWallet: "bob",
-      amount: paidAmount,
-      description: `Alice paid ${paidAmount} sats to Bob via PayButton`,
-      snippetIds: ["bc-pay-button"],
-    });
-
-    addFlowStep({
-      fromWallet: "alice",
-      toWallet: "bob",
-      label: `Paid ${paidAmount} sats via PayButton`,
-      direction: "right",
-      status: "success",
-      snippetIds: ["bc-pay-button"],
-    });
-
-    // Refresh Bob's balance
-    try {
-      const bobClient = getNWCClient("bob");
-      if (bobClient) {
-        const bobBalance = await bobClient.getBalance();
-        const bobBalanceSats = Math.floor(bobBalance.balance / 1000);
-        setWalletBalance("bob", bobBalanceSats);
-        addBalanceSnapshot({ walletId: "bob", balance: bobBalanceSats });
-      }
-    } catch (error) {
-      console.error("Failed to refresh Bob's balance:", error);
-    }
-
-    // Refresh Bitcoin Connect balance
-    refreshBalance();
-  }, [addTransaction, addFlowStep, getNWCClient, setWalletBalance, addBalanceSnapshot]);
+  // Stable onPaid callback — new arrow function every render would cause PayButton's
+  // internal effect to re-run (re-dispatching "bc:onpaid") on every render.
+  const handleOnPaid = useCallback(() => {
+    handlePaymentComplete(paidAmountRef.current, isExternalPaymentRef.current);
+  }, [handlePaymentComplete]);
 
   const handleReset = () => {
     setInvoice(undefined);
     setPayment(undefined);
     setIsPaid(false);
     paidAmountRef.current = 0;
+    isExternalPaymentRef.current = false;
   };
 
   return (
@@ -293,7 +269,7 @@ export function PayButtonScenario() {
                     invoice={invoice}
                     payment={payment}
                     onClick={handleClick}
-                    onPaid={handlePaymentComplete}
+                    onPaid={handleOnPaid}
                   />
                 </div>
               </div>

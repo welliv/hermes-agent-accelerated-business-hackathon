@@ -22,20 +22,33 @@ export function BitcoinConnectButtonScenario() {
   const [aliceBalance, setAliceBalance] = useState<number | undefined>();
   const providerRef = useRef<WebLNProvider | null>(null);
 
-  const { initializeWallets, getWallet, areAllWalletsConnected } =
-    useWalletStore();
+  const {
+    initializeWallets,
+    getWallet,
+    areAllWalletsConnected,
+    setWalletStatus,
+  } = useWalletStore();
+  const { addTransaction } = useTransactionStore();
   const bobWallet = getWallet("bob");
   const bobConnected = areAllWalletsConnected(["bob"]);
 
-  // Initialize Bob's wallet on mount
+  // Initialize wallets on mount
   useEffect(() => {
-    initializeWallets(["bob"]);
+    initializeWallets(["alice", "bob"]);
   }, [initializeWallets]);
 
   useEffect(() => {
     const unsubConnected = onConnected(async (provider) => {
       setIsConnected(true);
+      setWalletStatus("alice", "connected");
       providerRef.current = provider;
+
+      addTransaction({
+        type: "balance_updated",
+        status: "success",
+        description: "Alice connected wallet via Bitcoin Connect Button",
+        snippetIds: ["bc-on-connected"],
+      });
 
       // Get Alice's balance
       try {
@@ -52,15 +65,23 @@ export function BitcoinConnectButtonScenario() {
 
     const unsubDisconnected = onDisconnected(() => {
       setIsConnected(false);
+      setWalletStatus("alice", "disconnected");
       providerRef.current = null;
       setAliceBalance(undefined);
+
+      addTransaction({
+        type: "balance_updated",
+        status: "success",
+        description: "Alice disconnected wallet",
+        snippetIds: ["bc-on-disconnected"],
+      });
     });
 
     return () => {
       unsubConnected();
       unsubDisconnected();
     };
-  }, []);
+  }, [addTransaction, setWalletStatus]);
 
   const refreshAliceBalance = async () => {
     if (providerRef.current) {
@@ -181,7 +202,7 @@ function PayBobSection({
       toWallet: "bob",
       amount: satoshi,
       description: `Alice paying ${satoshi} sats to Bob via Bitcoin Connect...`,
-      snippetIds: ["bc-button"],
+      snippetIds: ["pay-lightning-address"],
     });
 
     const requestFlowStepId = addFlowStep({
@@ -190,7 +211,7 @@ function PayBobSection({
       label: `Requesting invoice from ${bobLightningAddress}...`,
       direction: "right",
       status: "pending",
-      snippetIds: ["request-invoice-from-address"],
+      snippetIds: ["pay-lightning-address"],
     });
 
     let payFlowStepId = "";
@@ -216,7 +237,7 @@ function PayBobSection({
         label: "Paying via Bitcoin Connect...",
         direction: "right",
         status: "pending",
-        snippetIds: ["bc-button"],
+        snippetIds: ["pay-lightning-address"],
       });
 
       await provider.sendPayment(invoice.paymentRequest);

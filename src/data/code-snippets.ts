@@ -55,6 +55,8 @@ export type SnippetId =
   // Bitcoin Connect
   | "bc-init"
   | "bc-button"
+  | "bc-on-connected"
+  | "bc-on-disconnected"
   | "bc-launch-modal"
   | "bc-disconnect"
   | "bc-pay-button"
@@ -644,6 +646,42 @@ function App() {
     category: "bitcoin-connect",
   },
   {
+    id: "bc-on-connected",
+    title: "On Connected",
+    description:
+      "Subscribe to wallet connection events. The callback receives a WebLN provider you can use to interact with the wallet.",
+    code: `import { onConnected } from '@getalby/bitcoin-connect-react'
+
+const unsub = onConnected((provider) => {
+  console.log('Wallet connected!')
+  // Use provider to interact with the wallet:
+  // provider.getInfo()      - get wallet info
+  // provider.getBalance()   - get wallet balance
+  // provider.makeInvoice()  - create invoices
+  // provider.sendPayment()  - pay invoices
+})
+
+// Later, to unsubscribe:
+// unsub()`,
+    category: "bitcoin-connect",
+  },
+  {
+    id: "bc-on-disconnected",
+    title: "On Disconnected",
+    description:
+      "Subscribe to wallet disconnection events. Use this to clean up state and disable payment UI.",
+    code: `import { onDisconnected } from '@getalby/bitcoin-connect-react'
+
+const unsub = onDisconnected(() => {
+  console.log('Wallet disconnected!')
+  // Clean up state, disable payment UI, etc.
+})
+
+// Later, to unsubscribe:
+// unsub()`,
+    category: "bitcoin-connect",
+  },
+  {
     id: "bc-launch-modal",
     title: "Launch Connection Modal",
     description:
@@ -681,38 +719,82 @@ disconnect()
   {
     id: "bc-pay-button",
     title: "Pay Button Component",
-    description: "A button that fetches an invoice on click and launches the payment modal.",
-    code: `import { PayButton } from '@getalby/bitcoin-connect-react'
+    description: "A button that fetches an invoice on click and launches the payment modal. Supports external payments via QR code scanning.",
+    code: `import { useState } from 'react'
+import { PayButton, refreshBalance } from '@getalby/bitcoin-connect-react'
+import type { SendPaymentResponse } from '@webbtc/webln-types'
 
-// onClick fetches the invoice on demand and returns it
-// The payment modal opens automatically after the invoice is returned
-<PayButton
-  onClick={async () => {
-    const invoice = await fetchInvoiceFromServer()
-    return invoice // Return the BOLT-11 invoice string
-  }}
-  onPaid={(response) => console.log('Paid!', response.preimage)}
-/>`,
+function CheckoutButton() {
+  const [invoice, setInvoice] = useState<string>()
+  const [payment, setPayment] = useState<SendPaymentResponse>()
+
+  return (
+    <PayButton
+      invoice={invoice}
+      payment={payment}
+      onClick={async () => {
+        // Generate invoice on click and update state
+        const bolt11 = await fetchInvoiceFromServer()
+        setInvoice(bolt11)
+
+        // Poll for external payment (e.g. QR code scanned by another wallet)
+        const interval = setInterval(async () => {
+          try {
+            const tx = await nwcClient.lookupInvoice({ invoice: bolt11 })
+            if (tx.state === 'settled') {
+              clearInterval(interval)
+              setPayment({ preimage: tx.preimage })
+              refreshBalance() // onPaid only fires for internal payments
+            }
+          } catch (e) { /* ignore */ }
+        }, 2000)
+      }}
+      onPaid={(response) => {
+        // Fires for internal payments (connected wallet)
+        console.log('Paid!', response.preimage)
+        refreshBalance()
+      }}
+    />
+  )
+}`,
     category: "bitcoin-connect",
   },
   {
     id: "bc-launch-payment-modal",
     title: "Launch Payment Modal",
-    description: "Programmatically launch a payment modal for an invoice.",
-    code: `import { launchPaymentModal } from '@getalby/bitcoin-connect-react'
+    description: "Programmatically launch a payment modal. Polls for external payments (e.g. QR code scans) and notifies the modal via setPaid.",
+    code: `import { launchPaymentModal, refreshBalance } from '@getalby/bitcoin-connect-react'
 
-const { setPaid } = launchPaymentModal({
-  invoice: 'lnbc...',
-  onPaid: (response) => {
-    console.log('Payment preimage:', response.preimage)
-  },
-  onCancelled: () => {
-    console.log('Payment cancelled')
-  },
-})
+async function handlePayment(invoice: string) {
+  let pollingInterval: ReturnType<typeof setInterval>
 
-// For external payments (QR scan):
-// setPaid({ preimage: '...' })`,
+  const { setPaid } = launchPaymentModal({
+    invoice,
+    onPaid: (response) => {
+      // Fires for internal payments (connected wallet)
+      clearInterval(pollingInterval)
+      console.log('Payment preimage:', response.preimage)
+      refreshBalance()
+    },
+    onCancelled: () => {
+      clearInterval(pollingInterval)
+      console.log('Payment cancelled')
+    },
+  })
+
+  // Poll for external payments (e.g. QR code scanned by another wallet)
+  // When settled, call setPaid() to notify the modal
+  pollingInterval = setInterval(async () => {
+    try {
+      const tx = await nwcClient.lookupInvoice({ invoice })
+      if (tx.state === 'settled') {
+        clearInterval(pollingInterval)
+        setPaid({ preimage: tx.preimage })
+        refreshBalance() // onPaid only fires for internal payments
+      }
+    } catch (e) { /* ignore */ }
+  }, 2000)
+}`,
     category: "bitcoin-connect",
   },
 ];
