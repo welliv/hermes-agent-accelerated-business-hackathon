@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   launchPaymentModal,
   refreshBalance,
 } from "@getalby/bitcoin-connect-react";
+import type { SendPaymentResponse } from "@webbtc/webln-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,15 @@ import { Zap, Loader2, RefreshCw } from "lucide-react";
 import { useWalletStore, useTransactionStore } from "@/stores";
 import { WalletCard } from "@/components/wallet-card";
 import { WALLET_PERSONAS } from "@/types";
+import { TestWalletHelper } from "./test-wallet-helper";
 
 export function PaymentModalScenario() {
   const [amount, setAmount] = useState<number>(100);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  const pollingRef = useRef<number | null>(null);
+  const setPaidRef = useRef<((response: SendPaymentResponse) => void) | null>(null);
 
   const {
     initializeWallets,
@@ -36,10 +40,52 @@ export function PaymentModalScenario() {
   const bobWallet = getWallet("bob");
   const bobConnected = areAllWalletsConnected(["bob"]);
 
+  // Stop polling for external payments
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
   // Initialize Bob's wallet on mount
   useEffect(() => {
     initializeWallets(["bob"]);
   }, [initializeWallets]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => stopPolling();
+  }, [stopPolling]);
+
+  // Start polling to detect external payments (QR code scanned by another wallet)
+  const startPollingForExternalPayment = useCallback(
+    (invoiceString: string, amountSats: number) => {
+      stopPolling();
+
+      pollingRef.current = setInterval(async () => {
+        try {
+          const bobClient = getNWCClient("bob");
+          if (!bobClient) return;
+
+          const transaction = await bobClient.lookupInvoice({
+            invoice: invoiceString,
+          });
+
+          if (transaction.state === "settled") {
+            stopPolling();
+
+            // Update the modal state via setPaid
+            const response = { preimage: transaction.preimage } as SendPaymentResponse;
+            setPaidRef.current?.(response);
+          }
+        } catch (error) {
+          console.error("Error polling for external payment:", error);
+        }
+      }, 2000);
+    },
+    [stopPolling, getNWCClient],
+  );
 
   const handleCreateAndPay = async () => {
     if (!bobConnected) return;
@@ -98,9 +144,14 @@ export function PaymentModalScenario() {
         snippetIds: ["bc-launch-payment-modal"],
       });
 
-      launchPaymentModal({
+      // Start polling for external payments (in case user pays via QR code with another wallet)
+      startPollingForExternalPayment(invoiceResponse.invoice, amount);
+
+      const { setPaid } = launchPaymentModal({
         invoice: invoiceResponse.invoice,
         onPaid: async () => {
+          stopPolling();
+          setPaidRef.current = null;
           setIsPaid(true);
           setIsProcessing(false);
 
@@ -140,6 +191,7 @@ export function PaymentModalScenario() {
           refreshBalance();
         },
         onCancelled: () => {
+          stopPolling();
           setIsProcessing(false);
 
           addTransaction({
@@ -162,6 +214,9 @@ export function PaymentModalScenario() {
           });
         },
       });
+
+      // Store setPaid so polling can update the modal when external payment is detected
+      setPaidRef.current = setPaid;
     } catch (error) {
       console.error("Failed to create invoice:", error);
       const errorMessage =
@@ -256,6 +311,8 @@ export function PaymentModalScenario() {
                 </Button>
               </div>
             )}
+
+            <TestWalletHelper showExternalPayment />
           </CardContent>
         </Card>
 

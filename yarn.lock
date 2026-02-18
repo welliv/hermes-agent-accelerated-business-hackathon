@@ -538,17 +538,17 @@
   resolved "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.10.tgz"
   integrity sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==
 
-"@getalby/bitcoin-connect-react@^3.12.1":
-  version "3.12.1"
-  resolved "https://registry.yarnpkg.com/@getalby/bitcoin-connect-react/-/bitcoin-connect-react-3.12.1.tgz#4b60608bc65cbbcd12cc294266be8026dbb36ed6"
-  integrity sha512-OIzR3Hscy2ld0S2pcuPkTfiq50FpFSCqYMB7c8LsXD8h9nBLLCFgGkeuoLvW1mqCAGJjmNE2ArplQFsfoy2L6A==
+"@getalby/bitcoin-connect-react@^3.12.2":
+  version "3.12.2"
+  resolved "https://registry.yarnpkg.com/@getalby/bitcoin-connect-react/-/bitcoin-connect-react-3.12.2.tgz#efeccd2ef2b90214589f28f47f3f23bd5f6dce0f"
+  integrity sha512-kiqr4exrYGEQWlKl1ZiLD6MwR4+b+I6XuZoyjrODeNrgmkJxSJUZsxxTPp0e3Gv5DLF7WBwwCS9MG2YZwSwS8w==
   dependencies:
-    "@getalby/bitcoin-connect" "^3.12.1"
+    "@getalby/bitcoin-connect" "^3.12.2"
 
-"@getalby/bitcoin-connect@^3.12.1":
-  version "3.12.1"
-  resolved "https://registry.yarnpkg.com/@getalby/bitcoin-connect/-/bitcoin-connect-3.12.1.tgz#fa5f9ab6b53de0d93ac64b6b3dd0b21b4794aabf"
-  integrity sha512-wFcQkGABkUvzZphsVAVC9b0l3OHk5M+SjLYwaxNWqta8QblGrwWYlnRS0A7jAbeHdiOyjOvoC9GbAdBlsevUgg==
+"@getalby/bitcoin-connect@^3.12.2":
+  version "3.12.2"
+  resolved "https://registry.yarnpkg.com/@getalby/bitcoin-connect/-/bitcoin-connect-3.12.2.tgz#e1403f23e8a5c60e0a8ce6bc00e2c10a3b5a8e27"
+  integrity sha512-qtKKSE7gEVmCyc1AJR5cD9dxD83PvQotG7U7SvERXz1z9fEuKzKpXc16olVZhLiJjTLeQo1P2Zqv0d6lISKhBQ==
   dependencies:
     "@getalby/lightning-tools" "^6.1.0"
     "@getalby/sdk" "^6.0.2"

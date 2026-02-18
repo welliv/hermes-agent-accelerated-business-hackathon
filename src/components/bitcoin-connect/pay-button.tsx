@@ -9,32 +9,31 @@ import { RefreshCw } from "lucide-react";
 import { useWalletStore, useTransactionStore } from "@/stores";
 import { WalletCard } from "@/components/wallet-card";
 import { WALLET_PERSONAS } from "@/types";
+import { TestWalletHelper } from "./test-wallet-helper";
 
 export function PayButtonScenario() {
   const [amount, setAmount] = useState<number>(100);
   const [invoice, setInvoice] = useState<string | undefined>(undefined);
   const [isPaid, setIsPaid] = useState(false);
   const [payment, setPayment] = useState<SendPaymentResponse | undefined>(undefined);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
+  const paidAmountRef = useRef<number>(0);
   const pollingRef = useRef<number | null>(null);
 
-  const {
-    initializeWallets,
-    getWallet,
-    areAllWalletsConnected,
-    getNWCClient,
-    setWalletBalance,
-  } = useWalletStore();
-  const {
-    addTransaction,
-    updateTransaction,
-    addFlowStep,
-    updateFlowStep,
-    addBalanceSnapshot,
-  } = useTransactionStore();
+  const initializeWallets = useWalletStore((state) => state.initializeWallets);
+  const getNWCClient = useWalletStore((state) => state.getNWCClient);
+  const setWalletBalance = useWalletStore((state) => state.setWalletBalance);
+  const bobWallet = useWalletStore((state) => state.wallets["bob"]);
+  const bobConnected = bobWallet?.status === "connected";
 
-  const bobWallet = getWallet("bob");
-  const bobConnected = areAllWalletsConnected(["bob"]);
+  const addTransaction = useTransactionStore((state) => state.addTransaction);
+  const updateTransaction = useTransactionStore(
+    (state) => state.updateTransaction,
+  );
+  const addFlowStep = useTransactionStore((state) => state.addFlowStep);
+  const updateFlowStep = useTransactionStore((state) => state.updateFlowStep);
+  const addBalanceSnapshot = useTransactionStore(
+    (state) => state.addBalanceSnapshot,
+  );
 
   // Stop polling for external payments
   const stopPolling = useCallback(() => {
@@ -121,7 +120,7 @@ export function PayButtonScenario() {
     ],
   );
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     if (!bobConnected) return undefined;
 
     const txId = addTransaction({
@@ -163,7 +162,7 @@ export function PayButtonScenario() {
       });
 
       // Store the amount for when payment completes
-      setPaidAmount(amount);
+      paidAmountRef.current = amount;
 
       // Start polling for external payments (in case user pays via QR code with another wallet)
       startPollingForExternalPayment(invoiceResponse.invoice, amount);
@@ -188,10 +187,12 @@ export function PayButtonScenario() {
 
       return undefined;
     }
-  };
+  }, [bobConnected, amount, addTransaction, addFlowStep, getNWCClient, updateTransaction, updateFlowStep, startPollingForExternalPayment]);
 
-  const handlePaymentComplete = async () => {
+  const handlePaymentComplete = useCallback(async () => {
     setIsPaid(true);
+
+    const paidAmount = paidAmountRef.current;
 
     addTransaction({
       type: "payment_received",
@@ -227,13 +228,13 @@ export function PayButtonScenario() {
 
     // Refresh Bitcoin Connect balance
     refreshBalance();
-  };
+  }, [addTransaction, addFlowStep, getNWCClient, setWalletBalance, addBalanceSnapshot]);
 
   const handleReset = () => {
     setInvoice(undefined);
     setPayment(undefined);
     setIsPaid(false);
-    setPaidAmount(0);
+    paidAmountRef.current = 0;
   };
 
   return (
@@ -297,6 +298,8 @@ export function PayButtonScenario() {
                 </div>
               </div>
             )}
+
+            <TestWalletHelper showExternalPayment />
           </CardContent>
         </Card>
         {/* Bob's Wallet Card - Receives payment */}

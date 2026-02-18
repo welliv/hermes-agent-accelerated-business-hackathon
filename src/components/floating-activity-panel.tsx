@@ -28,22 +28,41 @@ export function FloatingActivityPanel() {
 
   const [isVisible, setIsVisible] = useState(false);
   const [animations, setAnimations] = useState<AnimationState[]>([]);
+  const [extraWalletIds, setExtraWalletIds] = useState<string[]>([]);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationCounterRef = useRef(0);
+  // Keep a ref to required wallet IDs so the subscription handler can read
+  // the latest value without being a dependency of the effect
+  const requiredWalletIdsRef = useRef<string[]>(
+    currentScenario?.requiredWallets || ["alice", "bob"],
+  );
 
-  // Build wallet positions in 2x2 grid
+  // Sync ref and reset extra wallet IDs when scenario changes
+  useEffect(() => {
+    requiredWalletIdsRef.current =
+      currentScenario?.requiredWallets || ["alice", "bob"];
+    setExtraWalletIds([]);
+  }, [currentScenario]);
+
+  // Build wallet positions in 2x2 grid, including any wallets seen in transactions
+  // that aren't in requiredWallets (tracked separately to avoid depending on all transactions)
   const walletPositions: WalletPosition[] = useMemo(() => {
     const requiredWalletIds = currentScenario?.requiredWallets || [
       "alice",
       "bob",
     ];
-    return requiredWalletIds.slice(0, 4).map((id: string, index: number) => ({
+    const allIds = [...requiredWalletIds];
+    for (const id of extraWalletIds) {
+      if (!allIds.includes(id)) allIds.push(id);
+    }
+
+    return allIds.slice(0, 4).map((id: string, index: number) => ({
       id,
       emoji: WALLET_PERSONAS[id]?.emoji || "👤",
       row: Math.floor(index / 2),
       col: index % 2,
     }));
-  }, [currentScenario?.requiredWallets]);
+  }, [currentScenario?.requiredWallets, extraWalletIds]);
 
   const getWalletIndex = useCallback(
     (walletId: string) => {
@@ -111,6 +130,26 @@ export function FloatingActivityPanel() {
           i++
         ) {
           const latestTx = state.transactions[i];
+
+          // Track wallet IDs not already in required wallets
+          const required = requiredWalletIdsRef.current;
+          const newIds: string[] = [];
+          if (latestTx.fromWallet && !required.includes(latestTx.fromWallet)) {
+            newIds.push(latestTx.fromWallet);
+          }
+          if (latestTx.toWallet && !required.includes(latestTx.toWallet)) {
+            newIds.push(latestTx.toWallet);
+          }
+          if (newIds.length > 0) {
+            setExtraWalletIds((prev) => {
+              const updated = [...prev];
+              for (const id of newIds) {
+                if (!updated.includes(id)) updated.push(id);
+              }
+              return updated;
+            });
+          }
+
           if (
             latestTx.fromWallet &&
             latestTx.toWallet &&

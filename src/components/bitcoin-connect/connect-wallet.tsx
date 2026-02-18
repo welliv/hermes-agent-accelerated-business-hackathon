@@ -16,17 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { useWalletStore, useTransactionStore } from "@/stores";
 import { WalletCard } from "@/components/wallet-card";
 import { WALLET_PERSONAS } from "@/types";
-import {
-  Loader2,
-  Unplug,
-  Wallet,
-  Zap,
-  TestTube2,
-  Copy,
-  Check,
-  Send,
-} from "lucide-react";
-import { createTestWallet } from "@/lib/faucet";
+import { Loader2, Unplug, Wallet, Zap, Send } from "lucide-react";
+import { TestWalletHelper } from "./test-wallet-helper";
 
 interface WalletInfo {
   alias?: string;
@@ -37,11 +28,6 @@ export function ConnectWalletScenario() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
-  const [testConnectionString, setTestConnectionString] = useState<
-    string | null
-  >(null);
-  const [isCreatingTestWallet, setIsCreatingTestWallet] = useState(false);
-  const [copied, setCopied] = useState(false);
   const modalOpenedTxIdRef = useRef<string | null>(null);
   const providerRef = useRef<WebLNProvider | null>(null);
 
@@ -151,26 +137,6 @@ export function ConnectWalletScenario() {
     disconnect();
   };
 
-  const handleGetTestConnectionString = async () => {
-    setIsCreatingTestWallet(true);
-    try {
-      const connectionSecret = await createTestWallet();
-      setTestConnectionString(connectionSecret);
-    } catch (error) {
-      console.error("Failed to create test wallet:", error);
-    } finally {
-      setIsCreatingTestWallet(false);
-    }
-  };
-
-  const handleCopyConnectionString = async () => {
-    if (testConnectionString) {
-      await navigator.clipboard.writeText(testConnectionString);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const refreshAliceBalance = async () => {
     if (providerRef.current) {
       try {
@@ -254,64 +220,7 @@ export function ConnectWalletScenario() {
                   Connect Wallet
                 </Button>
 
-                {/* Test wallet helper - inside Alice's card when not connected */}
-                <div className="border-t pt-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <TestTube2 className="h-4 w-4 text-purple-500" />
-                    <span>Try with a Test Wallet</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Don't have a Lightning wallet? Get a free test wallet
-                    connection string, then use the <strong>"NWC"</strong>{" "}
-                    option above and paste it there.
-                  </p>
-
-                  {testConnectionString ? (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <code className="block p-3 pr-12 bg-muted rounded-md text-xs break-all max-h-24 overflow-y-auto">
-                          {testConnectionString}
-                        </code>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="absolute top-2 right-2 h-7 w-7"
-                          onClick={handleCopyConnectionString}
-                        >
-                          {copied ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Copy this, click "Connect Wallet" above, select "NWC",
-                        and paste it.
-                      </p>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGetTestConnectionString}
-                      disabled={isCreatingTestWallet}
-                      className="w-full"
-                    >
-                      {isCreatingTestWallet ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating test wallet...
-                        </>
-                      ) : (
-                        <>
-                          <TestTube2 className="mr-2 h-4 w-4" />
-                          Get NWC Test Connection String
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                <TestWalletHelper />
               </>
             )}
           </CardContent>
