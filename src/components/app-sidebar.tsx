@@ -13,6 +13,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { scenarios } from "@/data/scenarios";
 import { AlbyIcon } from "@/icons/AlbyIcon";
+import { BitcoinConnectIcon } from "@/icons/BitcoinConnectIcon";
 
 const externalLinks = [
   {
@@ -55,6 +57,13 @@ export function AppSidebar() {
   // Extract scenarioId from pathname (e.g., "/simple-payment" or "/#/simple-payment")
   const scenarioId = location.pathname.split("/").filter(Boolean)[0];
 
+  const regularScenarios = scenarios.filter(
+    (s) => !s.section || s.section === "scenarios",
+  );
+  const bitcoinConnectScenarios = scenarios.filter(
+    (s) => s.section === "bitcoin-connect",
+  );
+
   return (
     <Sidebar>
       <SidebarHeader className="">
@@ -76,17 +85,39 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={!scenarioId}
-                >
+                <SidebarMenuButton asChild isActive={!scenarioId}>
                   <Link to="/">
                     <span>👋</span>
                     <span>Getting Started</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {scenarios.map((scenario) => (
+              {regularScenarios.map((scenario) => (
+                <SidebarMenuItem key={scenario.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={scenarioId === scenario.id}
+                  >
+                    <Link to={`/${scenario.id}`}>
+                      <span>{scenario.icon}</span>
+                      <span>{scenario.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {/* Bitcoin Connect Section */}
+        <SidebarGroup className="-mt-4">
+          <SidebarGroupLabel className="-mb-1">
+            <div title="Bitcoin Connect: let bitcoin surf the web">
+              <BitcoinConnectIcon className="size-20" />
+            </div>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {bitcoinConnectScenarios.map((scenario) => (
                 <SidebarMenuItem key={scenario.id}>
                   <SidebarMenuButton
                     asChild

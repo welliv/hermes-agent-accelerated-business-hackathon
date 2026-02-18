@@ -111,6 +111,7 @@ export function FloatingActivityPanel() {
           i++
         ) {
           const latestTx = state.transactions[i];
+
           if (
             latestTx.fromWallet &&
             latestTx.toWallet &&
