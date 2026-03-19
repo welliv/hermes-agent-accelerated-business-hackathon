@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Play,
   Rocket,
@@ -7,26 +7,26 @@ import {
   Check,
   MessageSquareText,
   Terminal,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useScenarioStore, useUIStore } from '@/stores';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useScenarioStore, useUIStore } from "@/stores";
 import {
   PROMPT_CATEGORIES,
   GETTING_STARTED_PROMPTS,
   getAllPrompts,
   type PromptCategory,
   type PromptWithScenario,
-} from '@/data/prompts';
-import type { ScenarioPrompt } from '@/types';
-import { cn } from '@/lib/utils';
+} from "@/data/prompts";
+import type { ScenarioPrompt } from "@/types";
+import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS: Record<PromptCategory, React.ReactNode> = {
-  'this-scenario': <Play className="h-4 w-4" />,
-  'getting-started': <Rocket className="h-4 w-4" />,
-  'all-scenarios': <List className="h-4 w-4" />,
+  "this-scenario": <Play className="h-4 w-4" />,
+  "getting-started": <Rocket className="h-4 w-4" />,
+  "all-scenarios": <List className="h-4 w-4" />,
 };
 
-const SKILL_COMMAND = 'npx skills add getAlby/alby-agent-skill';
+const SKILL_COMMAND = "npx skills add getAlby/builder-skill";
 
 function GettingStartedCard() {
   const [copied, setCopied] = useState(false);
@@ -37,7 +37,7 @@ function GettingStartedCard() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   };
 
@@ -46,7 +46,8 @@ function GettingStartedCard() {
       <div className="p-3">
         <h3 className="font-medium text-sm mb-1">Getting Started</h3>
         <p className="text-xs text-muted-foreground mb-2">
-          Install the Alby agent skill in your project, then copy a prompt below into Claude Code or another AI tool.
+          Install the Alby agent skill in your project, then copy a prompt below
+          into Claude Code or another AI tool.
         </p>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2 bg-muted/50 rounded-md px-3 py-1.5 font-mono text-xs">
@@ -81,12 +82,12 @@ export function PromptsTab() {
   const { promptCategory, setPromptCategory } = useUIStore();
   const { currentScenario } = useScenarioStore();
 
-  const isGettingStarted = promptCategory === 'getting-started';
+  const isGettingStarted = promptCategory === "getting-started";
 
   const prompts: (ScenarioPrompt | PromptWithScenario)[] =
-    promptCategory === 'this-scenario'
-      ? currentScenario.prompts ?? []
-      : promptCategory === 'all-scenarios'
+    promptCategory === "this-scenario"
+      ? (currentScenario.prompts ?? [])
+      : promptCategory === "all-scenarios"
         ? getAllPrompts()
         : [];
 
@@ -100,10 +101,10 @@ export function PromptsTab() {
               key={category.id}
               onClick={() => setPromptCategory(category.id)}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left whitespace-nowrap flex-shrink-0',
+                "flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left whitespace-nowrap flex-shrink-0",
                 promptCategory === category.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted'
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted",
               )}
             >
               {CATEGORY_ICONS[category.id]}
@@ -135,7 +136,7 @@ export function PromptsTab() {
               <PromptCard
                 key={index}
                 prompt={prompt}
-                showScenario={promptCategory === 'all-scenarios'}
+                showScenario={promptCategory === "all-scenarios"}
               />
             ))}
           </div>
@@ -160,12 +161,12 @@ function PromptCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   };
 
   const scenarioInfo =
-    showScenario && 'scenarioTitle' in prompt ? prompt : null;
+    showScenario && "scenarioTitle" in prompt ? prompt : null;
 
   return (
     <div className="border rounded-lg overflow-hidden">

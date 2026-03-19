@@ -27,13 +27,13 @@ export function Layout({ children }: LayoutProps) {
           <span className="inline-flex items-center gap-1">
             Built with
             <a
-              href="https://github.com/getAlby/alby-agent-skill"
+              href="https://github.com/getAlby/builder-skill"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <BotIcon className="size-3.5" />
-              Alby Agent Skill
+              Alby Bitcoin Builder Skill
             </a>
           </span>
           <span className="opacity-40">·</span>

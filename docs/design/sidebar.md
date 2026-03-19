@@ -9,7 +9,7 @@ The list of scenarios in the below diagram is just an example.
 Links:
 
 - [Alby Hub](https://getalby.com/alby-hub)
-- [Alby Agent Skill](https://github.com/getAlby/alby-agent-skill)
+- [Alby Bitcoin Builder Skill](https://github.com/getAlby/builder-skill)
 - [Alby JS SDK](https://github.com/getalby/js-sdk)
 - [Alby Lightning Tools](https://github.com/getalby/js-lightning-tools)
 

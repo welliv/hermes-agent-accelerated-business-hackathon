@@ -7,7 +7,7 @@ and understand Lightning payment flows and capabilities.
 
 **[Try it here](https://sandbox.albylabs.com)**
 
-The Alby Sandbox was vibe coded using the [Alby Agent Skill](https://github.com/getAlby/alby-agent-skill)
+The Alby Sandbox was vibe coded using the [Alby Bitcoin Builder Skill](https://github.com/getAlby/builder-skill)
 
 ## Development
 
@@ -15,4 +15,4 @@ The Alby Sandbox was vibe coded using the [Alby Agent Skill](https://github.com/
 
 `yarn dev`
 
-Make sure to install the alby agent skill: `npx skills add getAlby/alby-agent-skill`
+Make sure to install the alby bitcoin builder skill: `npx skills add getAlby/builder-skill`

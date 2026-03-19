@@ -17,7 +17,7 @@ export type SnippetId =
   // Getting Started
   | "install-libraries"
   | "init-wallet"
-  | "agent-skill"
+  | "builder-skill"
   // REPL
   | "browser-console"
   | "available-globals"
@@ -62,7 +62,7 @@ export type SnippetId =
   | "bc-pay-button"
   | "bc-launch-payment-modal";
 
-export type CodeLanguage = 'javascript' | 'typescript' | 'bash';
+export type CodeLanguage = "javascript" | "typescript" | "bash";
 
 export interface CodeSnippet {
   id: SnippetId;
@@ -92,13 +92,13 @@ export const SNIPPET_CATEGORIES: {
 
 export const CODE_SNIPPETS: CodeSnippet[] = [
   {
-    id: "agent-skill",
-    title: "Alby Agent Skill",
+    id: "builder-skill",
+    title: "Alby Bitcoin Builder Skill",
     description:
-      "Let your agent write the code for you, without making mistakes. Run the following command inside your project:",
+      "Turn your favorite agent into a bitcoin app builder. Run the following command inside your project:",
     category: "getting-started",
     language: "bash",
-    code: `npx skills add getAlby/alby-agent-skill
+    code: `npx skills add getAlby/builder-skill
 
 # No need to follow the code examples below. Jump directly to the example prompts!
 `,
@@ -719,7 +719,8 @@ disconnect()
   {
     id: "bc-pay-button",
     title: "Pay Button Component",
-    description: "A button that fetches an invoice on click and launches the payment modal. Supports external payments via QR code scanning.",
+    description:
+      "A button that fetches an invoice on click and launches the payment modal. Supports external payments via QR code scanning.",
     code: `import { useState } from 'react'
 import { PayButton, refreshBalance } from '@getalby/bitcoin-connect-react'
 import type { SendPaymentResponse } from '@webbtc/webln-types'
@@ -762,7 +763,8 @@ function CheckoutButton() {
   {
     id: "bc-launch-payment-modal",
     title: "Launch Payment Modal",
-    description: "Programmatically launch a payment modal. Polls for external payments (e.g. QR code scans) and notifies the modal via setPaid.",
+    description:
+      "Programmatically launch a payment modal. Polls for external payments (e.g. QR code scans) and notifies the modal via setPaid.",
     code: `import { launchPaymentModal, refreshBalance } from '@getalby/bitcoin-connect-react'
 
 async function handlePayment(invoice: string) {

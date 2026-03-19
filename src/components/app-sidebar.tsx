@@ -26,8 +26,8 @@ import { BitcoinConnectIcon } from "@/icons/BitcoinConnectIcon";
 
 const externalLinks = [
   {
-    title: "Alby Agent Skill",
-    url: "https://github.com/getalby/alby-agent-skill",
+    title: "Alby Bitcoin Builder Skill",
+    url: "https://github.com/getalby/builder-skill",
     icon: <BotIcon className="size-4" />,
   },
   {
