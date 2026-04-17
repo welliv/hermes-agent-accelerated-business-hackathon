@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Loader2, ShieldCheck } from "lucide-react";
+import { Copy, Lightbulb, Loader2, ShieldCheck } from "lucide-react";
 import { fetch402, Invoice } from "@getalby/lightning-tools";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -299,6 +299,11 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
           Bob calls <code className="text-xs">fetch402</code> which
           automatically handles the 402 response, pays the invoice, and retries
           the request with proof of payment.
+        </p>
+
+        <p className="text-xs text-muted-foreground/60 flex items-center gap-1.5">
+          <Lightbulb className="size-3.5 shrink-0 text-yellow-500/70" />
+          Open your browser devtools network tab to inspect the 402 request flow.
         </p>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
