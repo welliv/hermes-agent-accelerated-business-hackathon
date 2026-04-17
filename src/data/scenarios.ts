@@ -900,6 +900,10 @@ The flow: Enter amount → select currency → see converted value in real time.
     ],
     links: [
       {
+        label: "Learn about 402 protocols",
+        url: "https://getalby.com/blog/agentic-commerce-a-guide-to-l402-x402-and-mpp",
+      },
+      {
         label: "js-lightning-tools — 402 utilities (GitHub)",
         url: "https://github.com/getAlby/js-lightning-tools",
       },
@@ -953,6 +957,10 @@ The flow: Enter amount → select currency → see converted value in real time.
       },
     ],
     links: [
+      {
+        label: "Learn about 402 protocols",
+        url: "https://getalby.com/blog/agentic-commerce-a-guide-to-l402-x402-and-mpp",
+      },
       {
         label: "x402 Facilitator (albylabs.com)",
         url: "https://x402.albylabs.com",
@@ -1011,6 +1019,10 @@ The flow: Enter amount → select currency → see converted value in real time.
       },
     ],
     links: [
+      {
+        label: "Learn about 402 protocols",
+        url: "https://getalby.com/blog/agentic-commerce-a-guide-to-l402-x402-and-mpp",
+      },
       {
         label: "Lightning Charge Draft (paymentauth.org)",
         url: "https://paymentauth.org/draft-lightning-charge-00",
