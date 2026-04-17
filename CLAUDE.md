@@ -62,6 +62,13 @@ Visualization should update in real-time.
 - Leverage Shadcn MCP for UI component development
 - Use Alby Agent skill for wallet integration guidance
 
+## Commands
+
+- `yarn dev` — start dev server
+- `yarn typecheck` — TypeScript type-check (no emit)
+- `yarn build` — full build (tsc + vite)
+- `yarn lint` — ESLint
+
 ## Scenarios
 
 Each scenario has a title, description, education (content for the user to be displayed), and complexity. More complex scenarios should be lower in the list.

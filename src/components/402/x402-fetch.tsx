@@ -179,21 +179,21 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
       status: "pending",
       fromWallet: "bob",
       toWallet: "alice",
-      amount: 0,
+      amount: priceSats,
       description: `x402 fetch: ${protectedUrl}`,
       snippetIds: ["fetch-with-l402"],
     });
 
-    const requestFlowStepId = addFlowStep({
+    const step1Id = addFlowStep({
       fromWallet: "bob",
       toWallet: "alice",
-      label: "Fetching resource...",
+      label: "GET /resource",
       direction: "left",
       status: "pending",
       snippetIds: ["fetch-with-l402"],
     });
 
-    let payFlowStepId = "";
+    let step4Id = "";
 
     try {
       const wallet = {
@@ -203,21 +203,42 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
 
           updateTransaction(txId, { amount: amountSats });
 
-          payFlowStepId = addFlowStep({
-            fromWallet: "bob",
-            toWallet: "alice",
-            label: `Paying ${amountSats} sat invoice...`,
-            direction: "left",
-            status: "pending",
+          updateFlowStep(step1Id, {
+            label: "GET /resource",
+            status: "success",
           });
 
-          updateFlowStep(requestFlowStepId, {
-            label: "402 received — paying invoice...",
+          addFlowStep({
+            fromWallet: "alice",
+            toWallet: "bob",
+            label: `HTTP 402 + X-Payment-Required (via x402 facilitator, ${amountSats} sats)`,
             direction: "right",
             status: "success",
           });
 
+          const step3Id = addFlowStep({
+            fromWallet: "bob",
+            toWallet: "alice",
+            label: `Pay ${amountSats} sat invoice via x402 facilitator...`,
+            direction: "left",
+            status: "pending",
+          });
+
           const result = await bobClient.payInvoice({ invoice: args.invoice });
+
+          updateFlowStep(step3Id, {
+            label: `Invoice paid (${amountSats} sats)`,
+            status: "success",
+          });
+
+          step4Id = addFlowStep({
+            fromWallet: "bob",
+            toWallet: "alice",
+            label: "GET /resource + X-Payment: signature",
+            direction: "left",
+            status: "pending",
+          });
+
           return { preimage: result.preimage };
         },
       };
@@ -227,9 +248,9 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
 
       setResponseBody(body);
 
-      if (payFlowStepId) {
-        updateFlowStep(payFlowStepId, {
-          label: "Payment confirmed",
+      if (step4Id) {
+        updateFlowStep(step4Id, {
+          label: "GET /resource + X-Payment: signature",
           status: "success",
         });
       }
@@ -237,7 +258,7 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
       addFlowStep({
         fromWallet: "alice",
         toWallet: "bob",
-        label: "Resource delivered",
+        label: "HTTP 200 OK — resource delivered",
         direction: "right",
         status: "success",
       });
@@ -270,13 +291,13 @@ function BobPanel({ protectedUrl, priceSats }: BobPanelProps) {
         description: `x402 fetch failed: ${errorMessage}`,
       });
 
-      if (payFlowStepId) {
-        updateFlowStep(payFlowStepId, {
+      if (step4Id) {
+        updateFlowStep(step4Id, {
           label: `Payment failed: ${errorMessage}`,
           status: "error",
         });
       } else {
-        updateFlowStep(requestFlowStepId, {
+        updateFlowStep(step1Id, {
           label: `Request failed: ${errorMessage}`,
           status: "error",
         });
