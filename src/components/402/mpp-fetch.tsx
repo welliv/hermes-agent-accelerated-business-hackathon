@@ -73,9 +73,8 @@ function AlicePanel({
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Alice's NWC connection is embedded in the endpoint URL. When Bob
-          fetches the resource, the proxy uses her wallet to create a Lightning
-          invoice and returns it via the{" "}
+          When Bob fetches the resource, the 402-enabled server uses Alice's NWC
+          connection to create a Lightning invoice and returns it via the{" "}
           <code className="text-xs">Payment-Required</code> header.
         </p>
 

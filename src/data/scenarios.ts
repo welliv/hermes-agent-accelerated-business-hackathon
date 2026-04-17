@@ -880,12 +880,12 @@ The flow: Enter amount → select currency → see converted value in real time.
       {
         title: "Bob requests the resource",
         description:
-          "Bob's client sends an HTTP GET to the L402 proxy endpoint (which has Alice's NWC URL embedded).",
+          "Bob's client sends an HTTP GET to the L402-enabled server endpoint (which has Alice's NWC URL embedded).",
       },
       {
         title: "Server responds with 402",
         description:
-          "The proxy returns HTTP 402 with a WWW-Authenticate header containing a Lightning invoice generated via Alice's NWC connection.",
+          "The 402-enabled server returns HTTP 402 with a WWW-Authenticate header containing a Lightning invoice generated via Alice's NWC connection.",
       },
       {
         title: "fetch402 pays automatically",
@@ -934,12 +934,12 @@ The flow: Enter amount → select currency → see converted value in real time.
       {
         title: "Bob requests the resource",
         description:
-          "Bob's client sends an HTTP GET to the x402 proxy endpoint (which has Alice's NWC URL embedded).",
+          "Bob's client sends an HTTP GET to the x402-enabled server endpoint (which has Alice's NWC URL embedded).",
       },
       {
         title: "Server responds with 402",
         description:
-          "The proxy calls the x402 facilitator to generate a Lightning invoice for Alice, then returns HTTP 402 with a PAYMENT-REQUIRED header containing the invoice and payment requirements.",
+          "The 402-enabled server calls the x402 facilitator to generate a Lightning invoice for Alice, then returns HTTP 402 with a PAYMENT-REQUIRED header containing the invoice and payment requirements.",
       },
       {
         title: "fetch402 pays automatically",
@@ -949,7 +949,7 @@ The flow: Enter amount → select currency → see converted value in real time.
       {
         title: "Facilitator verifies and server responds",
         description:
-          "The proxy asks the facilitator to verify the payment. On success it proxies the protected content to Bob and settles the payment with the facilitator.",
+          "The 402-enabled server asks the facilitator to verify the payment. On success it delivers the protected content to Bob and settles the payment with the facilitator.",
       },
     ],
     links: [
@@ -992,12 +992,12 @@ The flow: Enter amount → select currency → see converted value in real time.
       {
         title: "Bob requests the resource",
         description:
-          "Bob's client sends an HTTP GET to the MPP proxy endpoint (which has Alice's NWC URL embedded).",
+          "Bob's client sends an HTTP GET to the MPP-enabled server endpoint (which has Alice's NWC URL embedded).",
       },
       {
         title: "Server responds with 402",
         description:
-          "The proxy generates a Lightning invoice via Alice's NWC connection and returns HTTP 402 with a Payment-Required header containing the invoice.",
+          "The 402-enabled server generates a Lightning invoice via Alice's NWC connection and returns HTTP 402 with a Payment-Required header containing the invoice.",
       },
       {
         title: "fetch402 pays automatically",
