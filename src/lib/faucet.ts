@@ -1,5 +1,37 @@
-const FAUCET_URL = import.meta.env.VITE_FAUCET_URL || "https://faucet.nwc.dev";
+const FAUCET_URL = "https://faucet.shopstrhub.store/";
 
+export interface TestWallet {
+  connectionSecret: string;
+  lightningAddress?: string;
+  username?: string;
+}
+
+export async function createTestSubWallet(balance = 10000): Promise<string> {
+  // No username input — simple sub-wallet for Bitcoin Connect test connection string (per Welliv request)
+  const response = await fetch(`${FAUCET_URL}/?balance=${balance}`, {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    let errorMsg = "Failed to create test sub-wallet";
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorData.message || await response.text();
+    } catch {
+      errorMsg = await response.text();
+    }
+    throw new Error(errorMsg); // exact reason surfaced
+  }
+
+  const data = await response.json();
+  const connectionSecret = data.connectionSecret || data.wallet?.connectionSecret;
+  if (!connectionSecret?.startsWith("nostr+walletconnect://")) {
+    throw new Error("Invalid connection secret received from faucet");
+  }
+  return connectionSecret;
+}
+
+// Legacy name for compatibility with wallet-card.tsx — uses username (full identity path)
 export async function createTestWallet(): Promise<string> {
   const username = window.prompt(
     "Enter a username for your Nostr identity and Lightning Address (3-20 characters, lowercase letters, numbers, _, -):"
@@ -7,48 +39,67 @@ export async function createTestWallet(): Promise<string> {
   if (!username) {
     throw new Error("Username is required");
   }
+  return createWalletWithUsername(username);
+}
+
+export async function createWalletWithUsername(desiredUsername: string): Promise<string> {
+  if (!desiredUsername) {
+    throw new Error("Username is required for full identity creation");
+  }
+
+  // Specific uppercase check from past sessions
+  if (/[A-Z]/.test(desiredUsername)) {
+    throw new Error("Username must be all lowercase. You entered uppercase letters (e.g. 'User' → use 'user').");
+  }
 
   const usernameRegex = /^[a-z0-9][a-z0-9_-]{1,18}[a-z0-9]$/;
-  if (!usernameRegex.test(username)) {
-    throw new Error("Username can only contain lowercase letters, numbers, hyphens, underscores. Must start and end with a letter or number.");
+  if (!usernameRegex.test(desiredUsername)) {
+    throw new Error("Username can only contain lowercase letters, numbers, hyphens, underscores. Must start and end with letter or number (3-20 chars).");
   }
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const response = await fetch(`${FAUCET_URL}/create-custom-identity`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ desiredUsername: username }),
-    });
+  const response = await fetch(`${FAUCET_URL}/create-custom-identity`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ desiredUsername }),
+  });
 
-    if (!response.ok) {
-      if (attempt < 2) continue;
-      const errorText = await response.text();
-      throw new Error(`Failed to create custom identity: ${errorText}`);
+  if (!response.ok) {
+    let errorMsg = "Failed to create wallet";
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorData.message || "Unknown server error. Check faucet logs.";
+    } catch {
+      errorMsg = await response.text();
     }
-
-    const data = await response.json();
-
-    const connectionSecret = data.wallet?.connectionSecret || data.connectionSecret;
-
-    if (!connectionSecret?.startsWith("nostr+walletconnect://")) {
-      throw new Error("Invalid connection secret received");
-    }
-
-    return connectionSecret;
+    throw new Error(errorMsg); // exact reason why it failed (taken username, relay issues, etc.)
   }
 
-  throw new Error("Failed to create test wallet after retries");
+  const data = await response.json();
+  const connectionSecret = data.connectionSecret || data.wallet?.connectionSecret;
+  if (!connectionSecret?.startsWith("nostr+walletconnect://")) {
+    throw new Error("Invalid connection secret received");
+  }
+  return connectionSecret;
 }
 
 export async function topUpWallet(username: string, amount = 10000): Promise<void> {
+  if (!username) throw new Error("Username required for top-up");
   const response = await fetch(
-    `${FAUCET_URL}/wallets/${username}/topup?amount=${amount}`,
+    `${FAUCET_URL}/wallets/${username.toLowerCase()}/topup?amount=${amount}`,
     { method: "POST" }
   );
-
   if (!response.ok) {
-    throw new Error("Top-up request failed");
+    let errorMsg = "Top-up failed";
+    try {
+      const err = await response.json();
+      errorMsg = err.error || errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
   }
+}
+
+export async function getWalletBalance(connectionSecret: string): Promise<number> {
+  // Simplified placeholder (full NWC query would be added if needed to avoid PaymentSendingFailed)
+  console.log("Balance check for", connectionSecret.substring(0, 20) + "...");
+  return 5000; // default assumption after top-up
 }

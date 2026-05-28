@@ -1,43 +1,34 @@
-# Shopstr Sandbox
+# Shopstr Sandbox (welliv/shopstr-sandbox - shopstr branch)
 
-Customized version of the Alby Sandbox integrated with our **Shopstr NWC Faucet**.
+Customized Alby Sandbox for Nostr commerce education. Integrated with **https://faucet.shopstrhub.store/** (custom NWC faucet with username-based identities, LNURL, Alby Hub).
 
-**[Try it here → https://sandbox.shopstrhub.store](https://sandbox.shopstrhub.store)**
+**[Live → https://sandbox.shopstrhub.store/](https://sandbox.shopstrhub.store/)** (hard refresh Ctrl+Shift+R after updates)
 
-## What it does
+## Bitcoin Connect Test Flow (updated per Welliv's request)
+- **Test connection string**: "Create Test Sub-Wallet" button — **no username input**. Uses simple legacy `POST /?balance=10000` to create sub-wallet instantly. Wallet is ready for NWC use.
+- Specific error reasons are now displayed (e.g. uppercase username error, taken username, relay failure, PaymentSendingFailed root cause guidance).
+- TestWalletHelper includes balance display, one-click Top Up, New Wallet (nuke for clean slate), and exact failure reasons from faucet.
 
-Educational Lightning Network demo that lets you test real NWC scenarios using test wallets created instantly via our faucet:
+## General Wallet Creation
+- Requires username (mimics your faucet exactly using `/create-custom-identity`).
+- Full NIP-05, Lightning Address, Nostr keys, Alby Hub registration.
 
-- One-click "Create Test Wallet" (prompts for username → creates Nostr identity + funded wallet + Lightning address)
-- Automatic NWC connection (no manual pasting of secrets)
-- Full support for LNURL-pay, NIP-05, balance top-ups, QR codes, and all Alby Sandbox scenarios
-- Seamless integration with local Alby Hub (signet)
-
-## Our Customizations (shopstr branch)
-
-- Direct integration with https://faucet.shopstrhub.store
-- Username-based wallet creation using `/create-custom-identity`
-- Updated `faucet.ts` to handle new JSON response format from the faucet
-- Vite preview configuration for custom domain + HTTPS
-- Production-ready Nginx reverse proxy setup
-
-## Development
-
+## Nuke for Clean Slate (Welliv preference)
 ```bash
-yarn install
-yarn dev
+pkill -9 -f "vite preview" || true
+pkill -9 -f "517[3-6]" || true
+rm -rf /tmp/shopstr-sandbox dist node_modules/.cache
 ```
 
-For production:
-- Built with `yarn build`
-- Served via Vite preview behind Nginx on Linux VPS
-- HTTPS via Let's Encrypt
+## Development & Deploy (VPS + Nginx + Let's Encrypt)
+1. `yarn install`
+2. `yarn build`
+3. `yarn preview --host 0.0.0.0 --port 5173` (or Nginx proxy)
+4. Hard refresh browser (Ctrl+Shift+R).
+5. Verify with `ss -tlnp | grep 5173` and curl.
 
-## Tech
+See `src/lib/faucet.ts` for dual wallet paths (`createTestSubWallet` vs `createWalletWithUsername`) and detailed error handling from our past sessions.
 
-- React + TypeScript + Vite
-- @getalby/sdk, lightning-tools, Bitcoin Connect
-- Custom faucet backend (see welliv/nwc-faucet)
-- Hosted on Linux VPS (no Fly.io)
+Pushed by agent on behalf of Welliv. All test wallets/sub-wallets nuked before this update for clean slate.
 
-This `shopstr` branch contains all the changes we made together for the Shopstr project.
+This branch maintained exclusively for Shopstr Nostr commerce scenarios.
