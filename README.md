@@ -1,35 +1,38 @@
 # Shopstr Sandbox
 
-Customized Alby Sandbox for Nostr commerce education scenarios. Integrated with **https://faucet.shopstrhub.store/** (custom NWC faucet with username-based identities, LNURL-pay/verify, Alby Hub on signet).
+Custom fork of the [Alby sandbox](https://github.com/getAlby/sandbox) for Nostr commerce educational scenarios. Integrated with a self-hosted custom NWC faucet at **[https://faucet.shopstrhub.store/](https://faucet.shopstrhub.store/)** (username-based identities, LNURL-pay/verify, Alby Hub on signet).
 
-**[Live → https://sandbox.shopstrhub.store/](https://sandbox.shopstrhub.store/)** (hard refresh Ctrl+Shift+R after every update/nuke).
+**Live demo**: [https://sandbox.shopstrhub.store/](https://sandbox.shopstrhub.store/) (hard refresh Ctrl+Shift+R after every update).
 
-## Key Customizations
-- **Bitcoin Connect test connection string**: "Create Test Sub-Wallet" button — **no username input**. Simple legacy `POST /?balance=10000` creates sub-wallet instantly. Returns ready-to-use `nostr+walletconnect://` string. (Mimics Alby test helper exactly while using our faucet.)
-- **Payment Forwarding & Payment Prisms**: Fully mimicked from Alby sandbox (structure, UI panels, quick-pay, listening toggle, forwarded/split lists, flow steps, transaction logs, notification handling using `notification.amountSats`). 
-  - **Balance forwarding fixed**: Initial balance locked *before* `subscribeNotifications`. Delta check (`Math.max(0, current - lastKnown)`) + debug logs (`[Forwarding Debug]` / `[Prism Debug]`) ensure **only new payments** are forwarded/split. Existing wallet balances, pre-listen top-ups, or delta=0 events are skipped.
-  - Calmer blue numbered cautions in Alice/Bob panels: "1. First turn ON \"Start Listening\" on Bob first. 2. Then send payment from Alice. Only new payments forwarded/split (balances ignored)."
-- **General wallet creation**: Requires username (mimics your faucet exactly via `/create-custom-identity` for NIP-05, Lightning Address, Nostr keys, Alby Hub registration). Exactly 10k sats on creation (no duplication).
-- **TestWalletHelper**: Balance display, one-click Top Up 10k, New Wallet (nuke), raw error messages from faucet (uppercase, taken username, relay health, PaymentSendingFailed guidance).
-- **Rebrand & custom**: Hardcoded `FAUCET_URL = "https://faucet.shopstrhub.store"`, no Alby fallback/branding/sidebar icons/links (keeps Alby SDK only for NWC protocol), calmer blue UI (no loud red banners), VPS/Nginx/Let's Encrypt accurate docs.
-- **Nuke for clean slate** (Welliv preference — run before every change/restart):
-  ```bash
-  pkill -9 -f "vite preview" || true
-  pkill -9 -f "node dist/app.js" || true
-  rm -rf dist ~/.cache/vite /tmp/*sandbox* /tmp/*faucet*
-  ```
-- Persistent `scripts/restart-on-nuke.sh` wrapper mitigates SIGKILL 502s on VPS.
+## Features
+- **Bitcoin Connect test wallet**: "Create Test Sub-Wallet" button — no username required. Uses legacy `POST /?balance=10000` for instant ready-to-use `nostr+walletconnect://` string. Includes real-time balance, one-click top-up, "New Wallet" nuke, and specific faucet error messages.
+- **General wallet creation**: Requires username (mimics your faucet exactly via `/create-custom-identity`). Delivers NIP-05, Lightning Address (`username@faucet.shopstrhub.store`), Nostr keys, and exactly 10,000 sats (no duplication).
+- **Payment Forwarding & Payment Prisms**: Exact mimic of Alby (clean card UI, quick-pay buttons, listening toggle, forwarded/split lists, flow steps, transaction logging, visualizations). 
+  - **Balance forwarding fixed**: Initial balance locked *before* `subscribeNotifications` + `lastKnownBalanceRef` + delta check (`Math.max(0, current - lastKnown)`) + debug logs ensure **only new payments** are forwarded/split. Existing balances, pre-listen top-ups, and delta=0 events are ignored.
+  - Calmer blue numbered cautions with your preferred phrasing in Alice/Bob panels.
+- Rebranded for Shopstr (no Alby sidebar icons/links/fallbacks where possible; Alby SDK kept only for NWC protocol).
+- VPS-optimized with Nginx + Let's Encrypt, persistent restart wrapper, and aggressive nuke workflow for clean slate.
 
-## Development & Deploy (VPS + Nginx + Let's Encrypt)
-1. Nuke (above).
+## Quick Start (VPS/Nginx)
+1. **Nuke for clean slate** (always run first per your preference):
+   ```bash
+   pkill -9 -f "vite preview" || true
+   pkill -9 -f "node dist/app.js" || true
+   rm -rf dist ~/.cache/vite /tmp/*sandbox* /tmp/*faucet*
+   ```
 2. `git pull origin shopstr`
 3. `yarn install && yarn build`
-4. `vite preview --host 0.0.0.0 --port 5173` (or Nginx proxy to 5173; faucet on 3000).
-5. Hard refresh browser (Ctrl+Shift+R).
-6. Verify: `ss -tlnp | grep -E '5173|3000'`, curl live endpoints, console debug logs.
+4. `vite preview --host 0.0.0.0 --port 5173` (Nginx proxies 5173 for sandbox, 3000 for faucet; use `scripts/restart-on-nuke.sh` for persistence).
+5. Hard refresh live site and verify with `ss -tlnp | grep -E '5173|3000'` + console debug logs.
 
-See `src/lib/faucet.ts` (dual paths: `createTestSubWallet` vs `createWalletWithUsername`), `src/components/scenarios/*` (Alby-mimicked with our fixes), and `./scripts/restart-on-nuke.sh`.
+## Architecture & Files
+- `src/lib/faucet.ts`: Dual paths (`createTestSubWallet` for no-username test, `createWalletWithUsername` for full identity). Hardcoded custom faucet URL + exact error extraction.
+- `src/components/scenarios/payment-forwarding.tsx` & `payment-prisms.tsx`: Alby-mimicked base with our delta safety, initial lock, debug logs, and blue numbered cautions.
+- `src/components/bitcoin-connect/test-wallet-helper.tsx`: Alby test helper mimic with our no-username flow, balance/top-up controls, and raw faucet errors.
+- `src/components/wallet-card.tsx`: Username-required flows with specific error surfacing.
+- Backend (`/tmp/nwc-faucet` or VPS): Custom Fastify server with `/create-custom-identity`, legacy endpoint, LNURL endpoints, Alby Hub integration, and slash normalization.
+- `scripts/restart-on-nuke.sh`: Persistent wrapper to survive SIGKILL nukes (prevents 502s on Nginx).
 
-All updates pushed by agent on behalf of Welliv. Test wallets/sub-wallets nuked for clean slate before each major change. Branch maintained exclusively for Shopstr Nostr commerce educational scenarios without touching core payment code.
+This branch is maintained exclusively for Shopstr Nostr commerce scenarios without touching core payment code. All test wallets/sub-wallets are nuked before major updates for a clean slate.
 
-Latest commit: Alby mimic for scenarios + balance forwarding fix + numbered blue cautions. (Commit 781679f and prior in this session.)
+Pushed by agent on behalf of Welliv. Latest updates include the full Alby mimic for scenarios, balance forwarding fix, and this consolidated README.
