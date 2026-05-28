@@ -1,4 +1,4 @@
-# Shopstr Sandbox (welliv/shopstr-sandbox - shopstr branch)
+# Shopstr Sandbox
 
 Customized Alby Sandbox for Nostr commerce education scenarios. Integrated with **https://faucet.shopstrhub.store/** (custom NWC faucet with username-based identities, LNURL-pay/verify, Alby Hub on signet).
 
