@@ -186,14 +186,6 @@ function AlicePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Meaningful numbered caution — only in Alice for send flow */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
-          <div>
-            <strong>1.</strong> First turn ON "Start Listening" on Bob.<br/>
-            <strong>2.</strong> Then send payment from Alice. Only new payments are forwarded/split (existing balances ignored).
-          </div>
-        </div>
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Recipient</label>
           <Input
@@ -256,9 +248,9 @@ function BobPanel() {
   const [prismPayments, setPrismPayments] = useState<PrismPayment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
-  const lastKnownBalanceRef = useRef(0);
   const charliePercentRef = useRef(charliePercent);
   const davidPercentRef = useRef(davidPercent);
+  const lastKnownBalanceRef = useRef(0);
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
   const {
@@ -476,54 +468,49 @@ function BobPanel() {
         const tx = notification.notification;
         const amountSats = Math.floor(tx.amount / 1000);
 
-        // Robust delta mechanism: ONLY forward new payments, ignore existing balances
-        const balanceClient = getNWCClient("bob");
-        if (client) {
-          client.getBalance().then((balanceResult) => {
-            const currentSats = Math.floor(balanceResult.balance / 1000);
-            const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
-            lastKnownBalanceRef.current = currentSats;
-            console.log(`[Prism Debug] Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
-
-            if (incomingSats > 0) {
-              console.log(`[Prism Debug] New payment detected — splitting ${incomingSats} sats`);
-              splitPayment(incomingSats);
-            } else {
-              console.log("[Prism Debug] No new incoming payment (delta = 0), skipping split");
-            }
-          });
-        }
-
         addTransaction({
           type: "payment_received",
           status: "success",
           toWallet: "bob",
           amount: amountSats,
-          description: `Bob received ${amountSats} sats via prism`,
+          description: `Bob received ${amountSats} sats`,
           snippetIds: ["subscribe-notifications"],
         });
 
         addFlowStep({
           fromWallet: "bob",
           toWallet: "bob",
-          label: `🔔 Received ${amountSats} sats (prism split)`,
+          label: `🔔 Received ${amountSats} sats`,
           direction: "right",
           status: "success",
           snippetIds: ["subscribe-notifications"],
         });
+
+        // Update Bob's balance
+        const client = getNWCClient("bob");
+        if (client) {
+          client.getBalance().then((balance) => {
+            const balanceSats = Math.floor(balance.balance / 1000);
+            setWalletBalance("bob", balanceSats);
+            addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
+          });
+        }
+
+        // Split the payment
+        splitPayment(amountSats);
       }
     },
     [
       addTransaction,
       addFlowStep,
+      addBalanceSnapshot,
       getNWCClient,
-      lastKnownBalanceRef,
+      setWalletBalance,
       splitPayment,
     ],
   );
 
   const startListening = async () => {
-
     const client = getNWCClient("bob");
     if (!client) {
       setError("Bob wallet not connected");
@@ -538,7 +525,10 @@ function BobPanel() {
     setIsStarting(true);
     setError(null);
 
-    // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
+    // CRITICAL FIX (mimics Alby + prevents balance forwarding): Lock initial balance BEFORE subscribeNotifications
+    const initialBalance = await client.getBalance();
+    lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
+    console.log("[Prism Debug] Initial balance locked at", lastKnownBalanceRef.current, "sats BEFORE listening. Only FUTURE payments will be split.");
 
     const txId = addTransaction({
       type: "invoice_created",
@@ -756,7 +746,6 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
   );
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
-  const lastKnownBalanceRef = useRef(0);
   const hasAutoStartedRef = useRef(false);
   const seenPaymentsRef = useRef<Set<string>>(new Set());
 
@@ -794,19 +783,8 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
       // the prism split. This notification just updates the recipient's UI
       // and flow diagram.
 
-      // Delta check for recipients (though main split logic is in BobPanel)
-      const balanceClient = getNWCClient(walletId);
-      if (client) {
-        client.getBalance().then((balanceResult) => {
-          const currentSats = Math.floor(balanceResult.balance / 1000);
-          const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
-          lastKnownBalanceRef.current = currentSats;
-          console.log(`[Prism Debug] ${walletId} Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
-        });
-      }
-
       addFlowStep({
-fromWallet: walletId,
+        fromWallet: walletId,
         toWallet: walletId,
         label: `🔔 ${persona.name}: +${amountSats} sats`,
         direction: "right",
@@ -815,7 +793,7 @@ fromWallet: walletId,
       });
 
       // Update balance
-      const balanceClient = getNWCClient(walletId);
+      const client = getNWCClient(walletId);
       if (client) {
         client.getBalance().then((balance) => {
           const balanceSats = Math.floor(balance.balance / 1000);
@@ -829,7 +807,7 @@ fromWallet: walletId,
   const startListening = async () => {
     if (unsubRef.current) return; // Already listening
 
-    const balanceClient = getNWCClient(walletId);
+    const client = getNWCClient(walletId);
     if (!client) {
       setError(`${persona.name} wallet not connected`);
       return;
@@ -846,8 +824,6 @@ fromWallet: walletId,
 
       unsubRef.current = unsub;
       setIsListening(true);
-      // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
-
     } catch (err) {
       console.error("Failed to subscribe to notifications:", err);
       setError(err instanceof Error ? err.message : "Failed to subscribe");
@@ -870,7 +846,7 @@ fromWallet: walletId,
     if (hasAutoStartedRef.current) return;
     hasAutoStartedRef.current = true;
 
-    const balanceClient = getNWCClient(walletId);
+    const client = getNWCClient(walletId);
     if (!client) return;
 
     let unsub: (() => void) | null = null;
@@ -884,8 +860,6 @@ fromWallet: walletId,
         unsub = unsubFn;
         unsubRef.current = unsubFn;
         setIsListening(true);
-      // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
-
       })
       .catch((err) => {
         console.error("Failed to subscribe:", err);

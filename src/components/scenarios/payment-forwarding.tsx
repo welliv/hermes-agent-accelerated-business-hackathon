@@ -248,8 +248,8 @@ function BobPanel() {
   >([]);
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
-  const lastKnownBalanceRef = useRef(0);
   const forwardPercentRef = useRef(forwardPercent);
+  const lastKnownBalanceRef = useRef(0);
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
   const {
@@ -401,26 +401,18 @@ function BobPanel() {
           snippetIds: ["subscribe-notifications"],
         });
 
-        // Update Bob's balance and compute delta to only forward new payments (core fix for "forwarding of balances")
+        // Update Bob's balance
         const client = getNWCClient("bob");
         if (client) {
-          client.getBalance().then((balanceResult) => {
-            const currentSats = Math.floor(balanceResult.balance / 1000);
-            const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
-            lastKnownBalanceRef.current = currentSats;
-            console.log(`[Forwarding Debug] Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
-
-            setWalletBalance("bob", currentSats);
-            addBalanceSnapshot({ walletId: "bob", balance: currentSats });
-
-            if (incomingSats > 0) {
-              console.log(`[Forwarding Debug] New payment detected — forwarding ${incomingSats} sats (${forwardPercentRef.current}% to Charlie)`);
-              forwardPayment(incomingSats);
-            } else {
-              console.log("[Forwarding Debug] No new incoming payment (delta = 0), skipping forward");
-            }
+          client.getBalance().then((balance) => {
+            const balanceSats = Math.floor(balance.balance / 1000);
+            setWalletBalance("bob", balanceSats);
+            addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
           });
         }
+
+        // Forward the payment
+        forwardPayment(amountSats);
       }
     },
     [
@@ -448,7 +440,7 @@ function BobPanel() {
     setIsStarting(true);
     setError(null);
 
-    // CRITICAL: Lock initial balance BEFORE subscribing to notifications. This prevents the current wallet balance from being treated as a "new payment" when listening starts.
+    // CRITICAL FIX (mimics Alby + prevents balance forwarding): Lock initial balance BEFORE subscribeNotifications
     const initialBalance = await client.getBalance();
     lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
     console.log("[Forwarding Debug] Initial balance locked at", lastKnownBalanceRef.current, "sats BEFORE listening. Only FUTURE payments will be forwarded.");
@@ -536,14 +528,6 @@ function BobPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Single calmer blue info box — only in Bob (listener) panel. Duplicates completely removed from Alice, Charlie, and within Bob per Welliv request. Soft blue blends with UI. */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
-          <div>
-            <strong>Tip:</strong> Turn on "Start Listening" on this panel first, then send payment from Alice. This activates the forwarding logic.
-          </div>
-        </div>
-
         {bobWallet?.lightningAddress && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
             <Zap className="h-4 w-4 text-muted-foreground" />
@@ -552,7 +536,6 @@ function BobPanel() {
             </span>
           </div>
         )}
-
 
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -658,7 +641,6 @@ function CharliePanel() {
   );
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
-  const lastKnownBalanceRef = useRef(0);
   const seenPaymentsRef = useRef<Set<string>>(new Set());
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
@@ -749,10 +731,6 @@ function CharliePanel() {
 
         unsubRef.current = unsub;
         setIsListening(true);
-      // Initialize lastKnownBalanceRef so ONLY new payments after listening are forwarded (fixes "forwarding balances" bug)
-      const initialBalance = await client.getBalance();
-      lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
-      console.log("[Forwarding Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be forwarded.");
 
         addFlowStep({
           fromWallet: "charlie",
