@@ -8,6 +8,7 @@ export interface TestWallet {
 
 export async function createTestSubWallet(balance = 10000): Promise<string> {
   // No username input — simple sub-wallet for Bitcoin Connect test connection string (per Welliv request)
+  // Backend legacy POST / returns plain NWC string (text/plain), not JSON — handle both formats
   const response = await fetch(`${FAUCET_URL}/?balance=${balance}`, {
     method: "POST",
   });
@@ -23,10 +24,18 @@ export async function createTestSubWallet(balance = 10000): Promise<string> {
     throw new Error(errorMsg); // exact reason surfaced
   }
 
-  const data = await response.json();
-  const connectionSecret = data.connectionSecret || data.wallet?.connectionSecret;
-  if (!connectionSecret?.startsWith("nostr+walletconnect://")) {
-    throw new Error("Invalid connection secret received from faucet");
+  let connectionSecret: string;
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const data = await response.json();
+    connectionSecret = data.connectionSecret || data.wallet?.connectionSecret || String(data);
+  } else {
+    connectionSecret = await response.text();
+  }
+
+  connectionSecret = connectionSecret.trim();
+  if (!connectionSecret.startsWith("nostr+walletconnect://")) {
+    throw new Error(`Invalid connection secret received from faucet: ${connectionSecret.substring(0, 60)}...`);
   }
   return connectionSecret;
 }
