@@ -257,6 +257,7 @@ function BobPanel() {
   >([]);
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
+  const lastKnownBalanceRef = useRef(0);
   const forwardPercentRef = useRef(forwardPercent);
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
@@ -461,6 +462,10 @@ function BobPanel() {
       ]);
       unsubRef.current = unsub;
       setIsListening(true);
+      // Initialize lastKnownBalanceRef so ONLY new payments after listening are forwarded (fixes "forwarding balances" bug)
+      const initialBalance = await client.getBalance();
+      lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
+      console.log("[Forwarding Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be forwarded.");
 
       updateTransaction(txId, {
         status: "success",
@@ -653,6 +658,7 @@ function CharliePanel() {
   );
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
+  const lastKnownBalanceRef = useRef(0);
   const seenPaymentsRef = useRef<Set<string>>(new Set());
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
@@ -743,6 +749,10 @@ function CharliePanel() {
 
         unsubRef.current = unsub;
         setIsListening(true);
+      // Initialize lastKnownBalanceRef so ONLY new payments after listening are forwarded (fixes "forwarding balances" bug)
+      const initialBalance = await client.getBalance();
+      lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
+      console.log("[Forwarding Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be forwarded.");
 
         addFlowStep({
           fromWallet: "charlie",
