@@ -179,15 +179,6 @@ function AlicePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Calmer blue info box — softer colors (blue), cleaner/shorter text, better spacing. Blends with UI (replaces loud red). */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
-          <div>
-            <strong>Tip:</strong> Turn on "Start Listening" on Bob first, then send payment from Alice. This activates the forwarding/prism logic.
-          </div>
-        </div>
-
-
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">
             Recipient (Bob's Address)
@@ -536,14 +527,13 @@ function BobPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Calmer blue info box — softer colors (blue), cleaner/shorter text, better spacing. Blends with UI (replaces loud red). */}
+        {/* Single calmer blue info box — only in Bob (listener) panel. Duplicates completely removed from Alice, Charlie, and within Bob per Welliv request. Soft blue blends with UI. */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
           <span className="text-blue-500 mt-0.5">ℹ️</span>
           <div>
-            <strong>Tip:</strong> Turn on "Start Listening" on Bob first, then send payment from Alice. This activates the forwarding/prism logic.
+            <strong>Tip:</strong> Turn on "Start Listening" on this panel first, then send payment from Alice. This activates the forwarding logic.
           </div>
         </div>
-
 
         {bobWallet?.lightningAddress && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
@@ -553,6 +543,7 @@ function BobPanel() {
             </span>
           </div>
         )}
+
 
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -806,15 +797,6 @@ function CharliePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Calmer blue info box — softer colors (blue), cleaner/shorter text, better spacing. Blends with UI (replaces loud red). */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
-          <div>
-            <strong>Tip:</strong> Turn on "Start Listening" on Bob first, then send payment from Alice. This activates the forwarding/prism logic.
-          </div>
-        </div>
-
-
         {charlieWallet?.lightningAddress && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
             <Zap className="h-4 w-4 text-muted-foreground" />
