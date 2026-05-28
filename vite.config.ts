@@ -12,4 +12,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  preview: {
+    allowedHosts: [
+      "sandbox.shopstrhub.store",
+      ".shopstrhub.store",
+      "34.35.141.243",
+      "localhost",
+      "127.0.0.1"
+    ],
+    host: true,
+    port: 5173,
+  },
 });
