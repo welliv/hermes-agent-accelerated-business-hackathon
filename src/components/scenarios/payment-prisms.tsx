@@ -248,6 +248,7 @@ function BobPanel() {
   const [prismPayments, setPrismPayments] = useState<PrismPayment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
+  const lastKnownBalanceRef = useRef(0);
   const charliePercentRef = useRef(charliePercent);
   const davidPercentRef = useRef(davidPercent);
 
@@ -537,6 +538,14 @@ function BobPanel() {
       ]);
       unsubRef.current = unsub;
       setIsListening(true);
+      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
+      const clientForInit = getNWCClient("bob");
+      if (clientForInit) {
+        clientForInit.getBalance().then((initial) => {
+          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
+          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
+        });
+      }
 
       const cPercent = charliePercent;
       const dPercent = davidPercent;
@@ -740,6 +749,7 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
   );
   const [error, setError] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
+  const lastKnownBalanceRef = useRef(0);
   const hasAutoStartedRef = useRef(false);
   const seenPaymentsRef = useRef<Set<string>>(new Set());
 
@@ -818,6 +828,14 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
 
       unsubRef.current = unsub;
       setIsListening(true);
+      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
+      const clientForInit = getNWCClient("bob");
+      if (clientForInit) {
+        clientForInit.getBalance().then((initial) => {
+          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
+          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
+        });
+      }
     } catch (err) {
       console.error("Failed to subscribe to notifications:", err);
       setError(err instanceof Error ? err.message : "Failed to subscribe");
@@ -854,6 +872,14 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
         unsub = unsubFn;
         unsubRef.current = unsubFn;
         setIsListening(true);
+      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
+      const clientForInit = getNWCClient("bob");
+      if (clientForInit) {
+        clientForInit.getBalance().then((initial) => {
+          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
+          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
+        });
+      }
       })
       .catch((err) => {
         console.error("Failed to subscribe:", err);
