@@ -186,6 +186,14 @@ function AlicePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Meaningful numbered caution — only in Alice for send flow */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 text-sm flex items-start gap-2">
+          <span className="text-blue-500 mt-0.5">ℹ️</span>
+          <div>
+            <strong>1.</strong> First turn ON "Start Listening" on Bob.<br/>
+            <strong>2.</strong> Then send payment from Alice. Only new payments are forwarded/split (existing balances ignored).
+          </div>
+        </div>
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Recipient</label>
           <Input
@@ -468,49 +476,54 @@ function BobPanel() {
         const tx = notification.notification;
         const amountSats = Math.floor(tx.amount / 1000);
 
+        // Robust delta mechanism: ONLY forward new payments, ignore existing balances
+        const balanceClient = getNWCClient("bob");
+        if (client) {
+          client.getBalance().then((balanceResult) => {
+            const currentSats = Math.floor(balanceResult.balance / 1000);
+            const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
+            lastKnownBalanceRef.current = currentSats;
+            console.log(`[Prism Debug] Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
+
+            if (incomingSats > 0) {
+              console.log(`[Prism Debug] New payment detected — splitting ${incomingSats} sats`);
+              splitPayment(incomingSats);
+            } else {
+              console.log("[Prism Debug] No new incoming payment (delta = 0), skipping split");
+            }
+          });
+        }
+
         addTransaction({
           type: "payment_received",
           status: "success",
           toWallet: "bob",
           amount: amountSats,
-          description: `Bob received ${amountSats} sats`,
+          description: `Bob received ${amountSats} sats via prism`,
           snippetIds: ["subscribe-notifications"],
         });
 
         addFlowStep({
           fromWallet: "bob",
           toWallet: "bob",
-          label: `🔔 Received ${amountSats} sats`,
+          label: `🔔 Received ${amountSats} sats (prism split)`,
           direction: "right",
           status: "success",
           snippetIds: ["subscribe-notifications"],
         });
-
-        // Update Bob's balance
-        const client = getNWCClient("bob");
-        if (client) {
-          client.getBalance().then((balance) => {
-            const balanceSats = Math.floor(balance.balance / 1000);
-            setWalletBalance("bob", balanceSats);
-            addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
-          });
-        }
-
-        // Split the payment
-        splitPayment(amountSats);
       }
     },
     [
       addTransaction,
       addFlowStep,
-      addBalanceSnapshot,
       getNWCClient,
-      setWalletBalance,
+      lastKnownBalanceRef,
       splitPayment,
     ],
   );
 
   const startListening = async () => {
+
     const client = getNWCClient("bob");
     if (!client) {
       setError("Bob wallet not connected");
@@ -525,6 +538,8 @@ function BobPanel() {
     setIsStarting(true);
     setError(null);
 
+    // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
+
     const txId = addTransaction({
       type: "invoice_created",
       status: "pending",
@@ -538,14 +553,6 @@ function BobPanel() {
       ]);
       unsubRef.current = unsub;
       setIsListening(true);
-      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
-      const clientForInit = getNWCClient("bob");
-      if (clientForInit) {
-        clientForInit.getBalance().then((initial) => {
-          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
-          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
-        });
-      }
 
       const cPercent = charliePercent;
       const dPercent = davidPercent;
@@ -787,8 +794,19 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
       // the prism split. This notification just updates the recipient's UI
       // and flow diagram.
 
+      // Delta check for recipients (though main split logic is in BobPanel)
+      const balanceClient = getNWCClient(walletId);
+      if (client) {
+        client.getBalance().then((balanceResult) => {
+          const currentSats = Math.floor(balanceResult.balance / 1000);
+          const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
+          lastKnownBalanceRef.current = currentSats;
+          console.log(`[Prism Debug] ${walletId} Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
+        });
+      }
+
       addFlowStep({
-        fromWallet: walletId,
+fromWallet: walletId,
         toWallet: walletId,
         label: `🔔 ${persona.name}: +${amountSats} sats`,
         direction: "right",
@@ -797,7 +815,7 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
       });
 
       // Update balance
-      const client = getNWCClient(walletId);
+      const balanceClient = getNWCClient(walletId);
       if (client) {
         client.getBalance().then((balance) => {
           const balanceSats = Math.floor(balance.balance / 1000);
@@ -811,7 +829,7 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
   const startListening = async () => {
     if (unsubRef.current) return; // Already listening
 
-    const client = getNWCClient(walletId);
+    const balanceClient = getNWCClient(walletId);
     if (!client) {
       setError(`${persona.name} wallet not connected`);
       return;
@@ -828,14 +846,8 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
 
       unsubRef.current = unsub;
       setIsListening(true);
-      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
-      const clientForInit = getNWCClient("bob");
-      if (clientForInit) {
-        clientForInit.getBalance().then((initial) => {
-          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
-          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
-        });
-      }
+      // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
+
     } catch (err) {
       console.error("Failed to subscribe to notifications:", err);
       setError(err instanceof Error ? err.message : "Failed to subscribe");
@@ -858,7 +870,7 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
     if (hasAutoStartedRef.current) return;
     hasAutoStartedRef.current = true;
 
-    const client = getNWCClient(walletId);
+    const balanceClient = getNWCClient(walletId);
     if (!client) return;
 
     let unsub: (() => void) | null = null;
@@ -872,14 +884,8 @@ function RecipientPanel({ walletId }: RecipientPanelProps) {
         unsub = unsubFn;
         unsubRef.current = unsubFn;
         setIsListening(true);
-      // Initialize lastKnownBalanceRef so ONLY new payments after listening are split (fixes forwarding balances bug)
-      const clientForInit = getNWCClient("bob");
-      if (clientForInit) {
-        clientForInit.getBalance().then((initial) => {
-          lastKnownBalanceRef.current = Math.floor(initial.balance / 1000);
-          console.log("[Prism Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be split.");
-        });
-      }
+      // Balance initialization handled in BobPanel (main listener). Recipient panels only update UI.
+
       })
       .catch((err) => {
         console.error("Failed to subscribe:", err);

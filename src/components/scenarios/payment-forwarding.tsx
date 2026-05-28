@@ -401,18 +401,26 @@ function BobPanel() {
           snippetIds: ["subscribe-notifications"],
         });
 
-        // Update Bob's balance
+        // Update Bob's balance and compute delta to only forward new payments (core fix for "forwarding of balances")
         const client = getNWCClient("bob");
         if (client) {
-          client.getBalance().then((balance) => {
-            const balanceSats = Math.floor(balance.balance / 1000);
-            setWalletBalance("bob", balanceSats);
-            addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
+          client.getBalance().then((balanceResult) => {
+            const currentSats = Math.floor(balanceResult.balance / 1000);
+            const incomingSats = Math.max(0, currentSats - lastKnownBalanceRef.current);
+            lastKnownBalanceRef.current = currentSats;
+            console.log(`[Forwarding Debug] Previous: ${currentSats - incomingSats}, Current: ${currentSats}, Incoming delta: ${incomingSats} sats`);
+
+            setWalletBalance("bob", currentSats);
+            addBalanceSnapshot({ walletId: "bob", balance: currentSats });
+
+            if (incomingSats > 0) {
+              console.log(`[Forwarding Debug] New payment detected — forwarding ${incomingSats} sats (${forwardPercentRef.current}% to Charlie)`);
+              forwardPayment(incomingSats);
+            } else {
+              console.log("[Forwarding Debug] No new incoming payment (delta = 0), skipping forward");
+            }
           });
         }
-
-        // Forward the payment
-        forwardPayment(amountSats);
       }
     },
     [
@@ -440,6 +448,11 @@ function BobPanel() {
     setIsStarting(true);
     setError(null);
 
+    // CRITICAL: Lock initial balance BEFORE subscribing to notifications. This prevents the current wallet balance from being treated as a "new payment" when listening starts.
+    const initialBalance = await client.getBalance();
+    lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
+    console.log("[Forwarding Debug] Initial balance locked at", lastKnownBalanceRef.current, "sats BEFORE listening. Only FUTURE payments will be forwarded.");
+
     const txId = addTransaction({
       type: "invoice_created",
       status: "pending",
@@ -453,10 +466,6 @@ function BobPanel() {
       ]);
       unsubRef.current = unsub;
       setIsListening(true);
-      // Initialize lastKnownBalanceRef so ONLY new payments after listening are forwarded (fixes "forwarding balances" bug)
-      const initialBalance = await client.getBalance();
-      lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
-      console.log("[Forwarding Debug] Listener started. Initial balance locked at", lastKnownBalanceRef.current, "sats. Only new payments will be forwarded.");
 
       updateTransaction(txId, {
         status: "success",
