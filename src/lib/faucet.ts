@@ -31,7 +31,7 @@ export async function createTestSubWallet(balance = 10000): Promise<string> {
   return connectionSecret;
 }
 
-// Legacy name for compatibility with wallet-card.tsx — uses username (full identity path) + auto top-up to fix connection after username
+// Legacy name for compatibility with wallet-card.tsx — uses username (full identity path). Backend now loads exactly 10k sats on creation (no auto top-up duplication).
 export async function createTestWallet(): Promise<{connectionSecret: string; username: string}> {
   const username = window.prompt(
     "Enter a username for your Nostr identity and Lightning Address (3-20 characters, lowercase letters, numbers, _, -):"
@@ -40,7 +40,7 @@ export async function createTestWallet(): Promise<{connectionSecret: string; use
     throw new Error("Username is required");
   }
   const connectionSecret = await createWalletWithUsername(username);
-  await topUpWallet(username); // auto top-up after creation to prevent zero-balance connection errors
+  // No auto top-up — backend transferToApp already gives exactly 10,000 sats
   return { connectionSecret, username };
 }
 
