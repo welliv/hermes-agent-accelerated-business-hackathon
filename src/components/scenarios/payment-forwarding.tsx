@@ -179,6 +179,16 @@ function AlicePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Red instructional banner - re-implemented from feb623f */}
+        <div className="p-4 bg-red-100 border-2 border-red-500 rounded-xl text-red-800 dark:bg-red-950 dark:border-red-600 dark:text-red-200 text-sm">
+          <strong>⚠️ Important — Start Listening First</strong>
+          <ol className="mt-2 list-decimal list-inside space-y-1 text-red-700 dark:text-red-300">
+            <li>First turn ON <strong>"Start Listening"</strong> on Bob first.</li>
+            <li>Then send payment from Alice.</li>
+          </ol>
+          <p className="mt-2 text-xs opacity-75">This ensures the forwarding logic is active before payments arrive.</p>
+        </div>
+
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">
             Recipient (Bob's Address)
@@ -522,6 +532,16 @@ function BobPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Red instructional banner - re-implemented from feb623f */}
+        <div className="p-4 bg-red-100 border-2 border-red-500 rounded-xl text-red-800 dark:bg-red-950 dark:border-red-600 dark:text-red-200 text-sm">
+          <strong>⚠️ Important — Start Listening First</strong>
+          <ol className="mt-2 list-decimal list-inside space-y-1 text-red-700 dark:text-red-300">
+            <li>First turn ON <strong>"Start Listening"</strong> on Bob first.</li>
+            <li>Then send payment from Alice.</li>
+          </ol>
+          <p className="mt-2 text-xs opacity-75">This ensures the forwarding logic is active before payments arrive.</p>
+        </div>
+
         {bobWallet?.lightningAddress && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
             <Zap className="h-4 w-4 text-muted-foreground" />
@@ -778,6 +798,16 @@ function CharliePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Red instructional banner - re-implemented from feb623f */}
+        <div className="p-4 bg-red-100 border-2 border-red-500 rounded-xl text-red-800 dark:bg-red-950 dark:border-red-600 dark:text-red-200 text-sm">
+          <strong>⚠️ Important — Start Listening First</strong>
+          <ol className="mt-2 list-decimal list-inside space-y-1 text-red-700 dark:text-red-300">
+            <li>First turn ON <strong>"Start Listening"</strong> on Bob first.</li>
+            <li>Then send payment from Alice.</li>
+          </ol>
+          <p className="mt-2 text-xs opacity-75">This ensures the forwarding logic is active before payments arrive.</p>
+        </div>
+
         {charlieWallet?.lightningAddress && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
             <Zap className="h-4 w-4 text-muted-foreground" />

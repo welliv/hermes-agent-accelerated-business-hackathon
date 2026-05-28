@@ -39,3 +39,13 @@ Similar to [./payment-forwarding.md] but with an extra recipient: David.
 │              │  David 50    │              │              │
 └──────────────┴──────────────┴──────────────┴──────────────┘
 ```
+
+## Instructions (re-implemented from feb623f)
+
+**⚠️ Start Listening First**
+
+1. First turn ON "Start Listening" on Bob first.
+2. Then send payment from Alice (or the sender).
+
+This ensures the prism splitting logic captures the payment.
+

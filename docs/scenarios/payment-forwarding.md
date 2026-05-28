@@ -62,3 +62,13 @@ Complexity: Medium
 │                         │                          │                         │
 └─────────────────────────┴──────────────────────────┴─────────────────────────┘
 ```
+
+## Instructions (re-implemented from feb623f)
+
+**⚠️ Start Listening First**
+
+1. First turn ON "Start Listening" on Bob first.
+2. Then send payment from Alice.
+
+This ensures the forwarding logic captures the payment.
+

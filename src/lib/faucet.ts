@@ -1,4 +1,4 @@
-const FAUCET_URL = "https://faucet.shopstrhub.store/";
+const FAUCET_URL = "https://faucet.shopstrhub.store";
 
 export interface TestWallet {
   connectionSecret: string;
