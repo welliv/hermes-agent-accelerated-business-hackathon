@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TestTube2, Loader2, Copy, Check, AlertCircle, Plus } from "lucide-react";
-import { createTestSubWallet, topUpWallet } from "@/lib/faucet";
+import { TestTube2, Loader2, Copy, Check, ExternalLink } from "lucide-react";
+import { createTestSubWallet } from "@/lib/faucet";
 
-const FAUCET_URL = "https://faucet.shopstrhub.store/";
+const FAUCET_URL = "https://faucet.shopstrhub.store";
 
 interface TestWalletHelperProps {
   showExternalPayment?: boolean;
@@ -12,57 +12,29 @@ interface TestWalletHelperProps {
 export function TestWalletHelper({
   showExternalPayment,
 }: TestWalletHelperProps) {
-  const [testConnectionString, setTestConnectionString] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [testConnectionString, setTestConnectionString] = useState<
+    string | null
+  >(null);
+  const [isCreatingTestWallet, setIsCreatingTestWallet] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [balance, setBalance] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreateTestSubWallet = async () => {
-    setIsCreating(true);
+  const handleGetTestConnectionString = async () => {
+    setIsCreatingTestWallet(true);
     setError(null);
-    setTestConnectionString(null);
     try {
       const connectionSecret = await createTestSubWallet(10000);
       setTestConnectionString(connectionSecret);
-      const match = connectionSecret.match(/lud16=([^&]+)/);
-      if (match) {
-        setUsername(match[1].split('@')[0]);
-      }
-      setBalance(10000);
-    } catch (err: any) {
-      const reason = err.message || "Unknown error creating sub-wallet";
-      setError(reason);
-      console.error("Wallet creation failed with reason:", reason);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      setError(message);
+      console.error("Failed to create test sub-wallet:", error);
     } finally {
-      setIsCreating(false);
+      setIsCreatingTestWallet(false);
     }
   };
 
-  const handleNewWallet = () => {
-    setTestConnectionString(null);
-    setError(null);
-    setUsername(null);
-    setBalance(null);
-    handleCreateTestSubWallet();
-  };
-
-  const handleTopUp = async () => {
-    if (!username) {
-      setError("No username for top-up. Open faucet for manual top-up.");
-      return;
-    }
-    try {
-      await topUpWallet(username);
-      setBalance((prev) => (prev || 0) + 10000);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || "Top-up failed");
-    }
-  };
-
-  const handleCopy = async () => {
+  const handleCopyConnectionString = async () => {
     if (testConnectionString) {
       await navigator.clipboard.writeText(testConnectionString);
       setCopied(true);
@@ -71,69 +43,52 @@ export function TestWalletHelper({
   };
 
   return (
-    <div className="border-t pt-4 space-y-4 bg-blue-50/50 p-4 rounded-lg border-blue-200">
-      <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
-        <TestTube2 className="h-4 w-4" />
-        <span>Bitcoin Connect Test Sub-Wallet</span>
+    <div className="border-t pt-4 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <TestTube2 className="h-4 w-4 text-purple-500" />
+        <span>Try with a Test Wallet</span>
       </div>
-      
-      <p className="text-xs text-blue-600">
-        No username input needed. Creates sub-wallet and connection string instantly. Hard refresh (Ctrl+Shift+R) after updates.
+      <p className="text-sm text-muted-foreground">
+        Don't have a Lightning wallet? Get a free test wallet connection string (no username needed for test sub-wallet),
+        then use the <strong>"NWC"</strong> option above and paste it there.
       </p>
 
       {error && (
-        <div className="flex items-start gap-2 text-xs bg-red-50 p-3 rounded border border-red-200 text-red-700">
-          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <div>{error}</div>
-        </div>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {testConnectionString ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="relative">
-            <code className="block p-3 pr-12 bg-muted rounded text-xs break-all font-mono max-h-28 overflow-auto">
+            <code className="block p-3 pr-12 bg-muted rounded-md text-xs break-all max-h-24 overflow-y-auto">
               {testConnectionString}
             </code>
             <Button
               size="icon"
               variant="ghost"
-              className="absolute top-2 right-2"
-              onClick={handleCopy}
+              className="absolute top-2 right-2 h-7 w-7"
+              onClick={handleCopyConnectionString}
             >
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
             </Button>
           </div>
-
-          {username && balance !== null && (
-            <div className="text-xs bg-green-50 p-2 rounded text-green-700">
-              LN: {username}@shopstrhub.store • {balance} sats
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Button onClick={handleCopy} className="flex-1" variant="outline" size="sm">
-              Copy String
-            </Button>
-            {username && (
-              <Button onClick={handleTopUp} className="flex-1" variant="outline" size="sm">
-                Top Up 10k
-              </Button>
-            )}
-            <Button onClick={handleNewWallet} variant="outline" size="sm" title="New Wallet (nuke old)">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <p className="text-[10px] text-muted-foreground">Specific error reasons are now shown above. Use New Wallet for clean slate if PaymentSendingFailed occurs.</p>
+          <p className="text-xs text-muted-foreground">
+            Copy this, click the button above, select "NWC", and paste it.
+          </p>
         </div>
       ) : (
         <Button
-          onClick={handleCreateTestSubWallet}
-          disabled={isCreating}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          variant="outline"
           size="sm"
+          onClick={handleGetTestConnectionString}
+          disabled={isCreatingTestWallet}
+          className="w-full"
         >
-          {isCreating ? (
+          {isCreatingTestWallet ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Creating test sub-wallet...
@@ -141,16 +96,27 @@ export function TestWalletHelper({
           ) : (
             <>
               <TestTube2 className="mr-2 h-4 w-4" />
-              Create Test Sub-Wallet
+              Get NWC Test Connection String
             </>
           )}
         </Button>
       )}
 
       {showExternalPayment && (
-        <div className="pt-3 border-t">
-          <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center justify-center gap-1">
-            Open Faucet for additional management →
+        <div className="border-t pt-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <ExternalLink className="h-4 w-4 text-blue-500" />
+            <span>Want to pay externally?</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            You can also pay the invoice from any Lightning wallet. Open the
+            faucet to send payments directly.
+          </p>
+          <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm" className="w-full">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Open Faucet (shopstrhub.store)
+            </Button>
           </a>
         </div>
       )}
