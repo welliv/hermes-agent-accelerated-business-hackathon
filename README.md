@@ -41,7 +41,7 @@ For production:
 
 - React + TypeScript + Vite
 - @getalby/sdk, lightning-tools, Bitcoin Connect
-- Custom faucet backend (see welliv/shopstr-faucet on shopstr branch)
+- Custom faucet backend (see https://github.com/welliv/shopstr-faucet)
 - Hosted on Linux VPS (no Fly.io)
 
 This `shopstr` branch contains all the changes we made together for the Shopstr project. Pushed by agent on behalf of Welliv.
