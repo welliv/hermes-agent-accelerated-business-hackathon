@@ -31,15 +31,17 @@ export async function createTestSubWallet(balance = 10000): Promise<string> {
   return connectionSecret;
 }
 
-// Legacy name for compatibility with wallet-card.tsx — uses username (full identity path)
-export async function createTestWallet(): Promise<string> {
+// Legacy name for compatibility with wallet-card.tsx — uses username (full identity path) + auto top-up to fix connection after username
+export async function createTestWallet(): Promise<{connectionSecret: string; username: string}> {
   const username = window.prompt(
     "Enter a username for your Nostr identity and Lightning Address (3-20 characters, lowercase letters, numbers, _, -):"
   );
   if (!username) {
     throw new Error("Username is required");
   }
-  return createWalletWithUsername(username);
+  const connectionSecret = await createWalletWithUsername(username);
+  await topUpWallet(username); // auto top-up after creation to prevent zero-balance connection errors
+  return { connectionSecret, username };
 }
 
 export async function createWalletWithUsername(desiredUsername: string): Promise<string> {

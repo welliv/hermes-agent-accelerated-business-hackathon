@@ -135,11 +135,13 @@ export function WalletCard({ wallet }: WalletCardProps) {
     setWalletStatus(wallet.id, "connecting");
 
     try {
-      const connectionSecret = await createTestWallet();
-      await connectWithNWC(connectionSecret);
+      const result = await createTestWallet();
+      await connectWithNWC(result.connectionSecret);
+      // Username wallet now auto-topped up in createTestWallet() to fix connection after username
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create test wallet";
       console.error("Failed to create test wallet:", error);
-      setWalletStatus(wallet.id, "error", "Failed to create test wallet");
+      setWalletStatus(wallet.id, "error", errorMessage);  // specific reason from faucet (uppercase, taken, etc.)
     } finally {
       setIsCreatingWallet(false);
     }
