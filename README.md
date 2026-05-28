@@ -4,7 +4,7 @@ Customized Alby Sandbox for Nostr commerce education scenarios. Integrated with 
 
 **[Live → https://sandbox.shopstrhub.store/](https://sandbox.shopstrhub.store/)** (hard refresh Ctrl+Shift+R after every update/nuke).
 
-## Key Customizations (per Welliv)
+## Key Customizations
 - **Bitcoin Connect test connection string**: "Create Test Sub-Wallet" button — **no username input**. Simple legacy `POST /?balance=10000` creates sub-wallet instantly. Returns ready-to-use `nostr+walletconnect://` string. (Mimics Alby test helper exactly while using our faucet.)
 - **Payment Forwarding & Payment Prisms**: Fully mimicked from Alby sandbox (structure, UI panels, quick-pay, listening toggle, forwarded/split lists, flow steps, transaction logs, notification handling using `notification.amountSats`). 
   - **Balance forwarding fixed**: Initial balance locked *before* `subscribeNotifications`. Delta check (`Math.max(0, current - lastKnown)`) + debug logs (`[Forwarding Debug]` / `[Prism Debug]`) ensure **only new payments** are forwarded/split. Existing wallet balances, pre-listen top-ups, or delta=0 events are skipped.
