@@ -250,6 +250,7 @@ function BobPanel() {
   const unsubRef = useRef<(() => void) | null>(null);
   const forwardPercentRef = useRef(forwardPercent);
   const lastKnownBalanceRef = useRef(0);
+const processedPaymentsRef = useRef(new Set<string>()); // BARRIER: prevents duplicate or balance forwarding by tracking payment_hash
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
   const {
@@ -379,41 +380,59 @@ function BobPanel() {
 
   const handleNotification = useCallback(
     (notification: Nip47Notification) => {
-      if (notification.notification_type === "payment_received") {
-        const tx = notification.notification;
-        const amountSats = Math.floor(tx.amount / 1000);
+      if (notification.notification_type !== "payment_received") return;
 
-        addTransaction({
-          type: "payment_received",
-          status: "success",
-          toWallet: "bob",
-          amount: amountSats,
-          description: `Bob received ${amountSats} sats`,
-          snippetIds: ["subscribe-notifications"],
-        });
+      const tx = notification.notification;
+      const paymentHash = tx.payment_hash || tx.preimage;
+      const amountSats = Math.floor((tx.amount || 0) / 1000);
 
-        addFlowStep({
-          fromWallet: "bob",
-          toWallet: "bob",
-          label: `🔔 Received ${amountSats} sats`,
-          direction: "right",
-          status: "success",
-          snippetIds: ["subscribe-notifications"],
-        });
-
-        // Update Bob's balance
-        const client = getNWCClient("bob");
-        if (client) {
-          client.getBalance().then((balance) => {
-            const balanceSats = Math.floor(balance.balance / 1000);
-            setWalletBalance("bob", balanceSats);
-            addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
-          });
-        }
-
-        // Forward the payment
-        forwardPayment(amountSats);
+      // === BARRIER: Only forward real new payments ===
+      if (!paymentHash) {
+        console.warn("[Forwarding Barrier] Notification had no payment_hash — blocked");
+        return;
       }
+      if (processedPaymentsRef.current.has(paymentHash)) {
+        console.log(`[Forwarding Barrier] Duplicate payment ${paymentHash.slice(0,8)}... — ignored`);
+        return;
+      }
+      if (amountSats <= 0 || amountSats > 500000) {
+        console.warn(`[Forwarding Barrier] Suspicious amount ${amountSats} sats — blocked`);
+        return;
+      }
+
+      processedPaymentsRef.current.add(paymentHash);
+      console.log(`[Forwarding Barrier] ✅ New payment received: ${amountSats} sats (hash: ${paymentHash.slice(0,8)}...)`);
+
+      addTransaction({
+        type: "payment_received",
+        status: "success",
+        toWallet: "bob",
+        amount: amountSats,
+        description: `Bob received ${amountSats} sats`,
+        snippetIds: ["subscribe-notifications"],
+      });
+
+      addFlowStep({
+        fromWallet: "bob",
+        toWallet: "bob",
+        label: `🔔 Received ${amountSats} sats`,
+        direction: "right",
+        status: "success",
+        snippetIds: ["subscribe-notifications"],
+      });
+
+      // Update Bob's balance safely
+      const client = getNWCClient("bob");
+      if (client) {
+        client.getBalance().then((balance) => {
+          const balanceSats = Math.floor(balance.balance / 1000);
+          setWalletBalance("bob", balanceSats);
+          addBalanceSnapshot({ walletId: "bob", balance: balanceSats });
+        });
+      }
+
+      // Forward ONLY the received payment amount (after barrier)
+      setTimeout(() => forwardPayment(amountSats), 200); // small delay for settlement
     },
     [
       addTransaction,
@@ -425,66 +444,6 @@ function BobPanel() {
     ],
   );
 
-  const startListening = async () => {
-    const client = getNWCClient("bob");
-    if (!client) {
-      setError("Bob wallet not connected");
-      return;
-    }
-
-    if (!charlieWallet?.lightningAddress) {
-      setError("Charlie's lightning address not available");
-      return;
-    }
-
-    setIsStarting(true);
-    setError(null);
-
-    // CRITICAL FIX (mimics Alby + prevents balance forwarding): Lock initial balance BEFORE subscribeNotifications
-    const initialBalance = await client.getBalance();
-    lastKnownBalanceRef.current = Math.floor(initialBalance.balance / 1000);
-    console.log("[Forwarding Debug] Initial balance locked at", lastKnownBalanceRef.current, "sats BEFORE listening. Only FUTURE payments will be forwarded.");
-
-    const txId = addTransaction({
-      type: "invoice_created",
-      status: "pending",
-      description: "Bob subscribing to payment notifications...",
-      snippetIds: ["subscribe-notifications"],
-    });
-
-    try {
-      const unsub = await client.subscribeNotifications(handleNotification, [
-        "payment_received",
-      ]);
-      unsubRef.current = unsub;
-      setIsListening(true);
-
-      updateTransaction(txId, {
-        status: "success",
-        description: `Bob listening - will forward ${forwardPercent}% to Charlie`,
-      });
-
-      addFlowStep({
-        fromWallet: "bob",
-        toWallet: "bob",
-        label: `🔔 Listening (${forwardPercent}% → Charlie)`,
-        direction: "right",
-        status: "success",
-        snippetIds: ["subscribe-notifications"],
-      });
-    } catch (err) {
-      console.error("Failed to subscribe to notifications:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
-
-      updateTransaction(txId, {
-        status: "error",
-        description: `Failed to subscribe to notifications: ${errorMessage}`,
-      });
-    } finally {
-      setIsStarting(false);
-    }
-  };
 
   const stopListening = () => {
     if (unsubRef.current) {

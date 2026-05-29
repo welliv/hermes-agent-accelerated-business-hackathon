@@ -251,6 +251,7 @@ function BobPanel() {
   const charliePercentRef = useRef(charliePercent);
   const davidPercentRef = useRef(davidPercent);
   const lastKnownBalanceRef = useRef(0);
+  const processedPaymentsRef = useRef(new Set<string>()); // BARRIER: prevents duplicate or balance forwarding
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
   const {
