@@ -12,8 +12,8 @@ export interface Wallet {
 }
 
 export const WALLET_PERSONAS: Record<string, { name: string; emoji: string }> = {
-  alice: { name: 'Alice', emoji: '👩' },
-  bob: { name: 'Bob', emoji: '👨‍🦱' },
+  alice: { name: 'AI Model Provider', emoji: '🤖' },
+  bob: { name: 'Customer', emoji: '👤' },
   charlie: { name: 'Charlie', emoji: '👨‍🦰' },
   david: { name: 'David', emoji: '👱‍♂️' },
 };

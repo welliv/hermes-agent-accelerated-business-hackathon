@@ -17,8 +17,9 @@ export default defineConfig({
       "sandbox.shopstrhub.store",
       ".shopstrhub.store",
       "34.35.141.243",
+      "34.35.32.224",
       "localhost",
-      "127.0.0.1"
+      "127.0.0.1",
     ],
     host: true,
     port: 5173,

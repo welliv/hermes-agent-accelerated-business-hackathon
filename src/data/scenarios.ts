@@ -986,11 +986,11 @@ The flow: Enter amount → select currency → see converted value in real time.
   },
   {
     id: "mpp-fetch",
-    title: "MPP Fetch",
+    title: "AI Model Inference via MPP",
     description:
-      "Bob fetches a paid HTTP resource protected by MPP (Machine Payments Protocol). Alice's wallet handles invoice creation directly via NWC.",
+      "Bob as the Customer requests AI model inference from Alice's paid HTTP endpoint protected by MPP. Alice's wallet handles invoice creation directly via NWC.",
     education:
-      "MPP (Machine Payments Protocol) is a lightweight HTTP payment standard designed for machine-to-machine payments. When Bob requests a protected resource, the server responds with HTTP 402 and a Payment-Required header containing a Lightning invoice generated directly via Alice's NWC connection. The fetch402 helper pays the invoice and retries the request with a Payment header containing the preimage as proof of payment.",
+      "MPP (Machine Payments Protocol) enables machine-to-machine payments for AI services. When Bob (the Customer) requests inference, the 402-enabled server generates a Lightning invoice via Alice's (the AI Provider's) NWC connection. Bob's fetch402 client pays the invoice and retries with the preimage to receive the model output.",
     icon: "🤖",
     section: "402",
     complexity: "simple",
@@ -998,7 +998,7 @@ The flow: Enter amount → select currency → see converted value in real time.
     snippetIds: ["fetch-with-l402"],
     howItWorks: [
       {
-        title: "Bob requests the resource",
+        title: "Bob requests AI inference",
         description:
           "Bob's client sends an HTTP GET to the MPP-enabled server endpoint (which has Alice's NWC URL embedded).",
       },
@@ -1013,9 +1013,9 @@ The flow: Enter amount → select currency → see converted value in real time.
           "The fetch402 helper detects the Payment-Required header, pays the invoice using Bob's NWC wallet, and retries the request with a Payment header containing the preimage as proof.",
       },
       {
-        title: "Bob receives the resource",
+        title: "Bob receives AI model response",
         description:
-          "The server verifies the preimage against the invoice and returns the protected content. Bob's balance decreases by the invoice amount, Alice's increases.",
+          "The server verifies the preimage against the invoice and returns the AI model output. Bob's balance decreases by the invoice amount, Alice's increases.",
       },
     ],
     links: [
@@ -1034,6 +1034,10 @@ The flow: Enter amount → select currency → see converted value in real time.
       {
         label: "js-lightning-tools — 402 utilities (GitHub)",
         url: "https://github.com/getAlby/js-lightning-tools",
+      },
+      {
+        label: "L402 for AI Agents (Lightning Labs)",
+        url: "https://lightning.engineering/posts/2024-06-27-l402-ai-agents/",
       },
     ],
     prompts: [

@@ -444,6 +444,59 @@ const processedPaymentsRef = useRef(new Set<string>()); // BARRIER: prevents dup
     ],
   );
 
+  const startListening = async () => {
+    const client = getNWCClient("bob");
+    if (!client) {
+      const msg = "Bob wallet is not connected";
+      setError(msg);
+      console.error(msg);
+      return;
+    }
+    setIsStarting(true);
+    setError(null);
+    const txId = addTransaction({
+      type: "subscription_started",
+      status: "pending",
+      description: "Bob subscribing to payment notifications (forwarding mode)...",
+      snippetIds: ["subscribe-notifications"],
+    });
+    try {
+      const unsub = await client.subscribeNotifications(handleNotification, [
+        "payment_received",
+      ]);
+      unsubRef.current = unsub;
+      setIsListening(true);
+      // Capture last known balance as the safety baseline for delta checks
+      try {
+        const bal = await client.getBalance();
+        lastKnownBalanceRef.current = Math.floor(bal.balance / 1000);
+      } catch {
+        // Non-fatal: forwarding barrier will still work
+      }
+      updateTransaction(txId, {
+        status: "success",
+        description: "Bob is now listening — will forward incoming payments",
+      });
+      addFlowStep({
+        fromWallet: "bob",
+        toWallet: "bob",
+        label: "🔔 Subscribed + forwarding armed",
+        direction: "right",
+        status: "success",
+        snippetIds: ["subscribe-notifications"],
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      console.error("Failed to subscribe (forwarding):", err);
+      updateTransaction(txId, {
+        status: "error",
+        description: `Failed to subscribe: ${errorMessage}`,
+      });
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   const stopListening = () => {
     if (unsubRef.current) {
