@@ -2,8 +2,6 @@
 
 Customized version of the Alby Sandbox integrated with our **Shopstr NWC Faucet**.
 
-**[Try it here → https://sandbox.shopstrhub.store](https://sandbox.shopstrhub.store)**
-
 ## What it does
 
 Educational Lightning Network demo that lets you test real NWC scenarios using test wallets created instantly via our faucet:
@@ -42,6 +40,5 @@ For production:
 - React + TypeScript + Vite
 - @getalby/sdk, lightning-tools, Bitcoin Connect
 - Custom faucet backend (see https://github.com/welliv/shopstr-faucet)
-- Hosted on Linux VPS (no Fly.io)
 
 This `shopstr` branch contains all the changes we made together for the Shopstr project. Pushed by agent on behalf of Welliv.
