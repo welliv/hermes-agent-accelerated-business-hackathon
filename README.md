@@ -42,3 +42,25 @@ For production:
 - Custom faucet backend (see https://github.com/welliv/shopstr-faucet)
 
 This `shopstr` branch contains all the changes we made together for the Shopstr project. Pushed by agent on behalf of Welliv.
+
+## Hermes Agent Accelerated Business Hackathon
+
+This demo is tailored for the NVIDIA, Stripe, and Nous Research Hermes Agent Accelerated Business Hackathon.
+It showcases an autonomous AI agent that can:
+- Analyze a task and recommend the optimal AI model (e.g., NVIDIA's Nemotron 3 Ultra) via OpenRouter MCP
+- Autonomously create and pay a Stripe PaymentIntent using the agent's own funds (test card pm_card_visa)
+- Execute the AI inference and return the result — all without human intervention, API keys, or prepaid credits.
+
+The demo uses the Stripe MPP (Machine Payments Protocol) flow to enable agent-driven commerce on premium AI models.
+
+
+
+## Hermes Agent Accelerated Business Hackathon
+
+This demo is tailored for the NVIDIA, Stripe, and Nous Research Hermes Agent Accelerated Business Hackathon.
+It showcases an autonomous AI agent that can:
+- Analyze a task and recommend the optimal AI model (e.g., NVIDIA's Nemotron 3 Ultra) via OpenRouter MCP
+- Autonomously create and pay a Stripe PaymentIntent using the agent's own funds (test card pm_card_visa)
+- Execute the AI inference and return the result — all without human intervention, API keys, or prepaid credits.
+
+The demo uses the Stripe MPP (Machine Payments Protocol) flow to enable agent-driven commerce on premium AI models.

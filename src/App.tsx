@@ -8,7 +8,6 @@ import { WalletGrid } from "@/components/wallet-grid";
 import { VisualizationPanel } from "@/components/visualization-panel";
 import { useScenarioStore } from "@/stores";
 import { useDevConsole } from "@/hooks/use-dev-console";
-import { getScenarioById } from "@/data/scenarios";
 
 function ScenarioRoute() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
@@ -22,15 +21,12 @@ function ScenarioRoute() {
     }
   }, [scenarioId, setCurrentScenario]);
 
-  const scenario = scenarioId ? getScenarioById(scenarioId) : undefined;
-  const isBitcoinConnectScenario = scenario?.section === "bitcoin-connect";
-
   return (
     <div className="flex h-full flex-col">
       {/* Top section: Scenario info and wallets */}
       <div className="flex-shrink-0 space-y-6 border-b p-6">
         <ScenarioInfo />
-        {!isBitcoinConnectScenario && <WalletGrid />}
+        <WalletGrid />
         <ScenarioPanel />
       </div>
 

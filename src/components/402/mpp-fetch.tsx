@@ -154,10 +154,22 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendation, setRecommendation] = useState<{
     model: string;
+    modelName: string;
     costSats: number;
     costUsd: string;
     reason: string;
+    contextLength?: number;
+    economical?: {
+      model: string;
+      modelName: string;
+      costSats: number;
+      costUsd: string;
+      reason: string;
+      contextLength?: number;
+    } | null;
   } | null>(null);
+
+  const [selectedModel, setSelectedModel] = useState<"best" | "economical">("best");
 
   const { getNWCClient, getWallet, setWalletBalance } = useWalletStore();
   const {
@@ -318,60 +330,111 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
   };
 
   // AI Task Assistant handlers
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setError(null);
+    setSelectedModel("best");
     
-    // Simulate MCP analysis delay
-    setTimeout(() => {
-      // Mock recommendation based on task keywords
+    try {
+      const backendUrl = `${window.location.protocol}//${window.location.hostname}:8000/api/analyze-task`;
+      const response = await fetch(backendUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: taskInput })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      setRecommendation({
+        model: data.model,
+        modelName: data.modelName,
+        costSats: data.costSats,
+        costUsd: data.costUsd,
+        reason: data.reason,
+        contextLength: data.contextLength,
+        economical: data.economical ? {
+          model: data.economical.model,
+          modelName: data.economical.modelName,
+          costSats: data.economical.costSats,
+          costUsd: data.economical.costUsd,
+          reason: data.economical.reason,
+          contextLength: data.economical.contextLength,
+        } : null,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analysis failed");
+      // Fallback to mock recommendation
       const task = taskInput.toLowerCase();
       let recommendation;
       
       if (task.includes("summarize") || task.includes("pdf") || task.includes("document")) {
         recommendation = {
           model: "anthropic/claude-3.5-sonnet",
+          modelName: "Claude 3.5 Sonnet",
           costSats: 5000,
           costUsd: "~$3.00",
-          reason: "Best for long-context document analysis and summarization"
+          reason: "Best for long-context document analysis and summarization",
+          economical: null
         };
       } else if (task.includes("code") || task.includes("script") || task.includes("python") || task.includes("programming")) {
         recommendation = {
           model: "openai/gpt-4o",
+          modelName: "GPT-4o",
           costSats: 3000,
           costUsd: "~$1.80",
-          reason: "Excellent code generation and reasoning capabilities"
+          reason: "Excellent code generation and reasoning capabilities",
+          economical: {
+            model: "openai/gpt-4o-mini",
+            modelName: "GPT-4o-mini",
+            costSats: 500,
+            costUsd: "~$0.30",
+            reason: "Cost-effective for coding tasks",
+            contextLength: 128000,
+          }
         };
       } else if (task.includes("creative") || task.includes("write") || task.includes("story") || task.includes("blog")) {
         recommendation = {
           model: "anthropic/claude-3.5-sonnet",
+          modelName: "Claude 3.5 Sonnet",
           costSats: 2500,
           costUsd: "~$1.50",
-          reason: "Superior creative writing and natural language flow"
+          reason: "Superior creative writing and natural language flow",
+          economical: null
         };
       } else if (task.includes("analyze") || task.includes("data") || task.includes("reasoning")) {
         recommendation = {
           model: "google/gemini-1.5-pro",
+          modelName: "Gemini 1.5 Pro",
           costSats: 4000,
           costUsd: "~$2.40",
-          reason: "Strong analytical reasoning and large context window"
+          reason: "Strong analytical reasoning and large context window",
+          economical: null
         };
       } else {
         recommendation = {
           model: "openai/gpt-4o-mini",
+          modelName: "GPT-4o-mini",
           costSats: 500,
           costUsd: "~$0.30",
-          reason: "Cost-effective for general purpose tasks"
+          reason: "Cost-effective for general purpose tasks",
+          economical: null
         };
       }
       
       setRecommendation(recommendation);
+    } finally {
       setIsAnalyzing(false);
-    }, 1500);
+    }
   };
 
   const handleConfirmAndPay = async () => {
     if (!recommendation || !endpointUrl) return;
+    
+    const selected = selectedModel === "best" ? recommendation : (recommendation.economical || recommendation);
     
     setIsFetching(true);
     setError(null);
@@ -384,7 +447,7 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
       status: "pending",
       fromWallet: "bob",
       toWallet: "alice",
-      amount: recommendation.costSats,
+      amount: selected.costSats,
       description: `AI Task: ${taskInput.slice(0, 50)}...`,
       snippetIds: ["fetch-with-l402"],
     });
@@ -392,7 +455,7 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
     const step1Id = addFlowStep({
       fromWallet: "bob",
       toWallet: "alice",
-      label: `POST /v1/chat/completions (${recommendation.model})`,
+      label: `POST /v1/chat/completions (${selected.model})`,
       direction: "left",
       status: "pending",
       snippetIds: ["fetch-with-l402"],
@@ -409,7 +472,7 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
           updateTransaction(txId, { amount: amountSats });
 
           updateFlowStep(step1Id, {
-            label: `POST /v1/chat/completions (${recommendation.model})`,
+            label: `POST /v1/chat/completions (${selected.model})`,
             status: "success",
           });
 
@@ -470,7 +533,7 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
 
       updateTransaction(txId, {
         status: "success",
-        description: `AI Task completed: ${recommendation.model}`,
+        description: `AI Task completed: ${selected.model}`,
       });
 
       // Refresh balances
@@ -552,7 +615,7 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
           <textarea
             value={taskInput}
             onChange={(e) => setTaskInput(e.target.value)}
-            placeholder="e.g., 'Summarize this 50-page PDF' or 'Write a Python script to scrape product prices'"
+            placeholder="e.g., 'Which is the best and most economical coding model?'"
             rows={3}
             className="w-full font-mono text-xs p-2 rounded bg-background border"
             disabled={isAnalyzing || isFetching}
@@ -560,15 +623,32 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
           
           {recommendation !== null && !isFetching ? (
             <div className="space-y-2">
+              {recommendation.economical && (
+                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Choose Model:</span>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value as "best" | "economical")}
+                      className="text-xs px-2 py-1 bg-white dark:bg-gray-800 border rounded"
+                    >
+                      <option value="best">🏆 Best Quality - {recommendation.modelName}</option>
+                      <option value="economical">💰 Most Economical - {recommendation.economical.modelName}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
               <div className="p-2 bg-primary/10 rounded text-xs">
                 <div className="flex items-center gap-1 mb-1">
                   <Zap className="h-3 w-3 text-primary" />
-                  <span className="font-medium">Recommendation</span>
+                  <span className="font-medium">
+                    {selectedModel === "best" ? "🏆 Best Quality" : "💰 Most Economical"}
+                  </span>
                 </div>
                 <div className="font-mono text-[10px] text-muted-foreground">
-                  Model: {recommendation.model}<br />
-                  Est. Cost: {recommendation.costSats} sats ({recommendation.costUsd})<br />
-                  Reason: {recommendation.reason}
+                  Model: {selectedModel === "best" ? recommendation.modelName : recommendation.economical?.modelName || recommendation.modelName}<br />
+                  Est. Cost: {selectedModel === "best" ? recommendation.costSats : recommendation.economical?.costSats || recommendation.costSats} sats ({selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd})<br />
+                  Reason: {selectedModel === "best" ? recommendation.reason : recommendation.economical?.reason || recommendation.reason}
                 </div>
               </div>
               <Button
@@ -580,12 +660,12 @@ function CustomerPanel({ protectedUrl, priceSats }: CustomerPanelProps) {
                 {isFetching ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Paying {recommendation.costSats} sats via MPP...
+                    Paying {selectedModel === "best" ? recommendation.costSats : recommendation.economical?.costSats || recommendation.costSats} sats via MPP...
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="mr-2 h-4 w-4" />
-                    Confirm & Pay {recommendation.costSats} sats
+                    Confirm & Pay {selectedModel === "best" ? recommendation.costSats : recommendation.economical?.costSats || recommendation.costSats} sats
                   </>
                 )}
               </Button>

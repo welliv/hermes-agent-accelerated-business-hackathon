@@ -986,36 +986,36 @@ The flow: Enter amount → select currency → see converted value in real time.
   },
   {
     id: "mpp-fetch",
-    title: "AI Model Inference via MPP",
+    title: "💰 EARN: Autonomous Agent Gets Paid via Lightning MPP",
     description:
-      "Bob as the Customer requests AI model inference from Alice's paid HTTP endpoint protected by MPP. Alice's wallet handles invoice creation directly via NWC.",
+      "Watch an AI agent complete a task and get paid instantly via Lightning. The agent calls an MPP-protected endpoint, the 402 proxy generates a Lightning invoice via NWC, the agent pays via fetch402, and the work is delivered — all in milliseconds. No invoices, no Net-30, no bank transfers.",
     education:
-      "MPP (Machine Payments Protocol) enables machine-to-machine payments for AI services. When Bob (the Customer) requests inference, the 402-enabled server generates a Lightning invoice via Alice's (the AI Provider's) NWC connection. Bob's fetch402 client pays the invoice and retries with the preimage to receive the model output.",
-    icon: "🤖",
+      "MPP (Machine Payments Protocol) lets AI providers wrap any endpoint in a 402 payment gate. The provider embeds an NWC connection; when an agent requests work, the server generates a Lightning invoice via NWC. The agent's fetch402 client pays and retries with the preimage. Provider gets paid per request via Lightning; agent gets results. No API key management, no prepaid credits, no human billing flow.",
+    icon: "⚡",
     section: "402",
     complexity: "simple",
     requiredWallets: ["alice", "bob"],
     snippetIds: ["fetch-with-l402"],
     howItWorks: [
       {
-        title: "Bob requests AI inference",
+        title: "Agent requests paid work endpoint",
         description:
-          "Bob's client sends an HTTP GET to the MPP-enabled server endpoint (which has Alice's NWC URL embedded).",
+          "Agent sends HTTP GET to the MPP-enabled endpoint (provider's NWC URL embedded in 402 proxy config).",
       },
       {
-        title: "Server responds with 402",
+        title: "Server responds with 402 + Lightning invoice",
         description:
-          "The 402-enabled server generates a Lightning invoice via Alice's NWC connection and returns HTTP 402 with a Payment-Required header containing the invoice.",
+          "402 proxy generates a Lightning invoice via provider's NWC connection and returns HTTP 402 with Payment-Required header containing the invoice.",
       },
       {
-        title: "fetch402 pays automatically",
+        title: "fetch402 pays automatically via NWC",
         description:
-          "The fetch402 helper detects the Payment-Required header, pays the invoice using Bob's NWC wallet, and retries the request with a Payment header containing the preimage as proof.",
+          "The fetch402 client detects the Payment-Required header, pays the invoice using the agent's NWC wallet, and retries with a Payment header containing the preimage as proof.",
       },
       {
-        title: "Bob receives AI model response",
+        title: "Agent receives results, provider gets paid",
         description:
-          "The server verifies the preimage against the invoice and returns the AI model output. Bob's balance decreases by the invoice amount, Alice's increases.",
+          "Server verifies the preimage against the invoice and delivers the work product. Provider receives sats instantly via Lightning.",
       },
     ],
     links: [
@@ -1042,11 +1042,69 @@ The flow: Enter amount → select currency → see converted value in real time.
     ],
     prompts: [
       {
-        title: "Paid Data Feed",
+        title: "Build an Autonomous Agent That Earns via Lightning MPP",
         description:
-          "Write a React component that fetches real-time BTC price data from a pay-per-call API using fetch402 and an NWC wallet. Show the price and the total sats spent across calls.",
+          "Create a complete flow where an agent performs work, gets paid via Lightning, and the provider receives instant settlement.",
         prompt:
-          "Write a React component that fetches real-time BTC price data from a pay-per-call API using fetch402 and an NWC wallet. Show the current price and the total sats spent across all calls.",
+          "Build a minimal FastAPI server that: 1) Accepts a task from an agent, 2) Returns HTTP 402 with Payment-Required header if not paid, 3) Generates a Lightning invoice via NWC on challenge, 4) Verifies preimage on /verify, 5) Returns the work result. Include a client script that hits the endpoint, pays via NWC wallet using fetch402, and prints the result.",
+      },
+    ],
+  },
+  {
+    id: "stripe-mpp-fetch",
+    title: "💳 SPEND: Autonomous Agent Buys AI Inference via Stripe MPP (Hackathon Demo)",
+    description:
+      "Watch an AI agent analyze a task, pick the optimal model (Nemotron 3 Ultra, GPT-4o, Claude, etc.), autonomously pay with Stripe's test card (pm_card_visa), and execute the inference — no human checkout, no API keys, no prepaid credits. This is how agents spend earnings on premium AI. This demo is tailored for the NVIDIA, Stripe, and Nous Research Hermes Agent Accelerated Business Hackathon.",
+    education:
+      "Stripe MPP lets AI providers wrap any model endpoint in a 402 payment gate using Stripe as the payment rail. When an agent hits the endpoint, the server returns 402 with www-authenticate: stripe. The agent creates a PaymentIntent, pays with pm_card_visa (Stripe's built-in test card), and the server verifies and returns the model output. Provider gets paid per request via Stripe; agent gets model output. No API key management, no prepaid credits, no checkout flow. This showcase demonstrates how agents can leverage NVIDIA's Nemotron 3 Ultra model via Stripe MPP for autonomous AI procurement in the hackathon context.",
+    icon: "💳",
+    section: "402",
+    complexity: "simple",
+    requiredWallets: [],
+    snippetIds: ["fetch-with-l402"],
+    howItWorks: [
+      {
+        title: "Agent requests AI inference with task",
+        description:
+          "Agent sends task to backend, which analyzes and recommends optimal model (Nemotron 3 Ultra, GPT-4o, Claude, etc.) with pricing.",
+      },
+      {
+        title: "Server responds with 402 + Stripe challenge",
+        description:
+          "Server returns HTTP 402 Payment Required with www-authenticate: stripe, creating a payment challenge for the recommended model cost.",
+      },
+      {
+        title: "Agent creates PaymentIntent & pays autonomously",
+        description:
+          "Agent calls Stripe API to create a PaymentIntent, then confirms it using pm_card_visa (Stripe's test payment method) — no checkout form, no human intervention.",
+      },
+      {
+        title: "Server verifies payment & executes model",
+        description:
+          "Server checks PaymentIntent status (succeeded), calls OpenRouter MCP to run the model (Nemotron 3 Ultra, etc.), and returns the AI response. Provider gets paid via Stripe.",
+      },
+    ],
+    links: [
+      {
+        label: "Stripe PaymentIntents API",
+        url: "https://docs.stripe.com/api/payment_intents",
+      },
+      {
+        label: "MPP Protocol Specification",
+        url: "https://mpp.dev/",
+      },
+      {
+        label: "Agent-Driven Commerce with Stripe",
+        url: "https://docs.stripe.com/agents",
+      },
+    ],
+    prompts: [
+      {
+        title: "Build an Autonomous Agent That Spends via Stripe MPP",
+        description:
+          "Create a complete flow where an agent buys premium AI inference using Stripe MPP with zero human intervention.",
+        prompt:
+          "Build a minimal FastAPI server that: 1) Accepts a task and analyzes it for model recommendation, 2) Returns HTTP 402 with www-authenticate: stripe if not paid, 3) Creates a Stripe PaymentIntent on challenge, 4) Verifies payment on /verify, 5) Calls OpenRouter MCP to run the model (Nemotron 3 Ultra, etc.) and returns the result. Include a client script that hits the endpoint, pays with pm_card_visa, and prints the model output.",
       },
     ],
   },

@@ -22,22 +22,42 @@ export interface PromptWithScenario extends ScenarioPrompt {
 
 export const GETTING_STARTED_PROMPTS: ScenarioPrompt[] = [
   {
-    title: "Example Prompt",
+    title: "Build an Autonomous Agent That Earns via Lightning MPP",
     description:
-      "A complete example showing what a good Lightning app prompt looks like. Be specific about the tech stack, features, and UX.",
-    prompt: `Create a Vite Typescript React app where a user can connect their wallet and then purchase fake cat pictures (simple canvas art) with a single click. Each picture costs 5000 sats. Show the total the shop has earned and their remaining stock of cat pictures. There should only be 21. Write tests for the app using vitest and playwright. Also take screenshots and review the screenshots.`,
+      "Create a complete flow where an agent performs work, gets paid via Lightning, and the provider receives instant settlement.",
+    prompt: `Build a minimal FastAPI server that:
+1) Accepts a task from an agent
+2) Returns HTTP 402 with Payment-Required header if not paid
+3) Generates a Lightning invoice via NWC on challenge
+4) Verifies preimage on /verify endpoint
+5) Returns the work result
+
+Include a client script that hits the endpoint, pays via NWC wallet using fetch402, and prints the result.`,
   },
   {
-    title: "Testing Frontend Apps",
+    title: "Build an Autonomous Agent That Spends via Stripe MPP",
     description:
-      "Add this to any prompt to get automated tests and visual review, and reduce the amount of human feedback and testing required. Works with vitest for unit/integration tests and playwright for end-to-end.",
-    prompt: `Write tests for the app using vitest and playwright. Also take screenshots and review the screenshots.`,
+      "Create a complete flow where an agent buys premium AI inference using Stripe MPP with zero human intervention.",
+    prompt: `Build a minimal FastAPI server that:
+1) Accepts a task and analyzes it for model recommendation
+2) Returns HTTP 402 with www-authenticate: stripe if not paid
+3) Creates a Stripe PaymentIntent on challenge
+4) Verifies payment on /verify endpoint
+5) Calls OpenRouter MCP to run the model (Nemotron 3 Ultra, etc.) and returns the result
+
+Include a client script that hits the endpoint, pays with pm_card_visa, and prints the model output.`,
   },
   {
-    title: "Testing Backend / Console Apps",
+    title: "Build the Full Autonomous Business: Earn + Spend + Run",
     description:
-      "Try this to any prompt to get automated tests and reduce the amount of human feedback and testing required. Works with jest.",
-    prompt: `Create a Typescript console app where Alice creates an invoice and Bob pays it. Write tests for it using jest.`,
+      "Combine both payment rails: agent earns via Lightning for completed work, then spends those earnings via Stripe to buy premium AI inference (Nemotron 3 Ultra).",
+    prompt: `Build a complete autonomous AI business demo:
+1) Lightning MPP endpoint where agents get paid for work (NWC + fetch402)
+2) Stripe MPP endpoint where agents buy premium AI inference (pm_card_visa + OpenRouter MCP)
+3) Business dashboard showing real-time revenue (Lightning earned), costs (Stripe spent), and profit
+4) Demo mode that auto-runs the full Earn → Spend → Run flow for video recording
+
+Use the existing 402 proxy for Lightning and Stripe PaymentIntents for Stripe. OpenRouter MCP provides 338+ live models with real-time pricing.`,
   },
 ];
 

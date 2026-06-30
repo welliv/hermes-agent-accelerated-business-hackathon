@@ -8,7 +8,6 @@ export type SnippetCategory =
   | "lightning-address"
   | "fiat"
   | "advanced"
-  | "bitcoin-connect"
   | "402";
 
 /**
@@ -90,7 +89,6 @@ export const SNIPPET_CATEGORIES: {
   { id: "lightning-address", label: "Lightning Address", icon: "at-sign" },
   { id: "fiat", label: "Fiat Conversion", icon: "dollar-sign" },
   { id: "advanced", label: "Advanced", icon: "code" },
-  { id: "bitcoin-connect", label: "Bitcoin Connect", icon: "link" },
   { id: "402", label: "402", icon: "lock" },
 ];
 
@@ -611,234 +609,46 @@ console.log('Wrapped invoice:', response.invoice)
 // 2. Pay the original invoice to get the preimage
 // 3. Use the preimage to settle your held payment
 // 4. You keep the fee difference!
-
 // This is non-custodial: you never hold the payer's funds.
 // They remain locked in the network until you settle.`,
     category: "advanced",
   },
-
-  // Bitcoin Connect
-  {
-    id: "bc-init",
-    title: "Initialize Bitcoin Connect",
-    description:
-      "Initialize Bitcoin Connect in your app. Call this once at startup before rendering your app.",
-    code: `import { init } from '@getalby/bitcoin-connect-react'
-
-// Initialize once at app startup (e.g., in main.tsx)
-init({
-  appName: "My Lightning App",
-  showBalance: true, // Show balance in the connection UI
-})
-
-// README link:
-// https://github.com/getAlby/bitcoin-connect`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-button",
-    title: "Bitcoin Connect Button",
-    description:
-      "Add a connect button that opens the wallet connection modal when clicked.",
-    code: `import { Button } from '@getalby/bitcoin-connect-react'
-
-// Renders a button that opens the connection modal
-// After connecting, it shows the wallet balance
-function App() {
-  return <Button />
-}`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-on-connected",
-    title: "On Connected",
-    description:
-      "Subscribe to wallet connection events. The callback receives a WebLN provider you can use to interact with the wallet.",
-    code: `import { onConnected } from '@getalby/bitcoin-connect-react'
-
-const unsub = onConnected((provider) => {
-  console.log('Wallet connected!')
-  // Use provider to interact with the wallet:
-  // provider.getInfo()      - get wallet info
-  // provider.getBalance()   - get wallet balance
-  // provider.makeInvoice()  - create invoices
-  // provider.sendPayment()  - pay invoices
-})
-
-// Later, to unsubscribe:
-// unsub()`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-on-disconnected",
-    title: "On Disconnected",
-    description:
-      "Subscribe to wallet disconnection events. Use this to clean up state and disable payment UI.",
-    code: `import { onDisconnected } from '@getalby/bitcoin-connect-react'
-
-const unsub = onDisconnected(() => {
-  console.log('Wallet disconnected!')
-  // Clean up state, disable payment UI, etc.
-})
-
-// Later, to unsubscribe:
-// unsub()`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-launch-modal",
-    title: "Launch Connection Modal",
-    description:
-      "Programmatically launch the Bitcoin Connect modal and subscribe to connection events.",
-    code: `import { launchModal, onConnected } from '@getalby/bitcoin-connect-react'
-
-// Subscribe to connection events
-const unsub = onConnected((provider) => {
-  console.log('Wallet connected!')
-  // provider.getInfo() - get wallet info
-  // provider.getBalance() - get wallet balance
-  // provider.makeInvoice() - create invoices
-  // provider.sendPayment() - pay invoices
-})
-
-// Launch the connection modal
-launchModal()
-
-// Later, to unsubscribe:
-// unsub()`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-disconnect",
-    title: "Disconnect Wallet",
-    description: "Disconnect the currently connected wallet.",
-    code: `import { disconnect } from '@getalby/bitcoin-connect-react'
-
-// Disconnect the wallet
-disconnect()
-
-// The onDisconnected callback will be triggered if you subscribed to it`,
-    category: "bitcoin-connect",
-  },
-  {
-    id: "bc-pay-button",
-    title: "Pay Button Component",
-    description:
-      "A button that fetches an invoice on click and launches the payment modal. Supports external payments via QR code scanning.",
-    code: `import { useState } from 'react'
-import { PayButton, refreshBalance } from '@getalby/bitcoin-connect-react'
-import type { SendPaymentResponse } from '@webbtc/webln-types'
-
-function CheckoutButton() {
-  const [invoice, setInvoice] = useState<string>()
-  const [payment, setPayment] = useState<SendPaymentResponse>()
-
-  return (
-    <PayButton
-      invoice={invoice}
-      payment={payment}
-      onClick={async () => {
-        // Generate invoice on click and update state
-        const bolt11 = await fetchInvoiceFromServer()
-        setInvoice(bolt11)
-
-        // Poll for external payment (e.g. QR code scanned by another wallet)
-        const interval = setInterval(async () => {
-          try {
-            const tx = await nwcClient.lookupInvoice({ invoice: bolt11 })
-            if (tx.state === 'settled') {
-              clearInterval(interval)
-              setPayment({ preimage: tx.preimage })
-              refreshBalance() // onPaid only fires for internal payments
-            }
-          } catch (e) { /* ignore */ }
-        }, 2000)
-      }}
-      onPaid={(response) => {
-        // Fires for internal payments (connected wallet)
-        console.log('Paid!', response.preimage)
-        refreshBalance()
-      }}
-    />
-  )
-}`,
-    category: "bitcoin-connect",
-  },
   // 402
   {
-    id: "fetch-with-l402",
-    title: "fetch402",
-    description:
-      "Fetch a resource protected by HTTP 402 Payment Required. Automatically handles the payment challenge and retries with proof of payment. Works with L402, x402, and MPP protocols.",
-    category: "402",
-    code: `import { fetch402 } from "@getalby/lightning-tools"
-import { nwc } from "@getalby/sdk"
+      id: "fetch-with-l402",
+      title: "fetch402",
+      description:
+        "Fetch a resource protected by HTTP 402 Payment Required. Automatically handles the payment challenge and retries with proof of payment. Works with L402, x402, and MPP protocols.",
+      category: "402",
+      code: `import { fetch402 } from "@getalby/lightning-tools"
+  import { nwc } from "@getalby/sdk"
 
-const client = new nwc.NWCClient({
-  nostrWalletConnectUrl: "nostr+walletconnect://...",
-})
-
-// fetch402 automatically:
-// 1. Sends the request
-// 2. On 402, parses the payment challenge (WWW-Authenticate header)
-// 3. Pays the invoice using your wallet
-// 4. Retries the request with proof of payment (Authorization: L402 token:preimage)
-const response = await fetch402(
-  "https://paidendpoint.example.com",
-  {}, // standard fetch options (method, headers, body, etc.)
-  { wallet: client } // NWC client implements the Wallet interface directly
-)
-
-const body = await response.text()
-console.log("Response:", body)
-
-// Server-side resources:
-// L402 utilities: https://github.com/getAlby/js-lightning-tools
-// x402 Facilitator: https://x402.albylabs.com
-// x402 Facilitator (GitHub): https://github.com/getAlby/x402-facilitator
-// MPP (Lightning Charge Draft): https://paymentauth.org/draft-lightning-charge-00
-// 402 Proxy (GitHub): https://github.com/getAlby/402-proxy`,
-  },
-  {
-    id: "bc-launch-payment-modal",
-    title: "Launch Payment Modal",
-    description:
-      "Programmatically launch a payment modal. Polls for external payments (e.g. QR code scans) and notifies the modal via setPaid.",
-    code: `import { launchPaymentModal, refreshBalance } from '@getalby/bitcoin-connect-react'
-
-async function handlePayment(invoice: string) {
-  let pollingInterval: ReturnType<typeof setInterval>
-
-  const { setPaid } = launchPaymentModal({
-    invoice,
-    onPaid: (response) => {
-      // Fires for internal payments (connected wallet)
-      clearInterval(pollingInterval)
-      console.log('Payment preimage:', response.preimage)
-      refreshBalance()
-    },
-    onCancelled: () => {
-      clearInterval(pollingInterval)
-      console.log('Payment cancelled')
-    },
+  const client = new nwc.NWCClient({
+    nostrWalletConnectUrl: "nostr+walletconnect://...",
   })
 
-  // Poll for external payments (e.g. QR code scanned by another wallet)
-  // When settled, call setPaid() to notify the modal
-  pollingInterval = setInterval(async () => {
-    try {
-      const tx = await nwcClient.lookupInvoice({ invoice })
-      if (tx.state === 'settled') {
-        clearInterval(pollingInterval)
-        setPaid({ preimage: tx.preimage })
-        refreshBalance() // onPaid only fires for internal payments
-      }
-    } catch (e) { /* ignore */ }
-  }, 2000)
-}`,
-    category: "bitcoin-connect",
-  },
-];
+  // fetch402 automatically:
+  // 1. Sends the request
+  // 2. On 402, parses the payment challenge (WWW-Authenticate header)
+  // 3. Pays the invoice using your wallet
+  // 4. Retries the request with proof of payment (Authorization: L402 token:preimage)
+  const response = await fetch402(
+    "https://paidendpoint.example.com",
+    {}, // standard fetch options (method, headers, body, etc.)
+    { wallet: client } // NWC client implements the Wallet interface directly
+  )
+
+  const body = await response.text()
+  console.log("Response:", body)
+
+  // Server-side resources:
+  // L402 utilities: https://github.com/getAlby/js-lightning-tools
+  // x402 Facilitator: https://x402.albylabs.com
+  // x402 Facilitator (GitHub): https://github.com/getAlby/x402-facilitator
+  // MPP (Lightning Charge Draft): https://paymentauth.org/draft-lightning-charge-00
+  // 402 Proxy (GitHub): https://github.com/getAlby/402-proxy`,
+    },
+  ];
 
 /**
  * Get snippets by their IDs (primary lookup method)

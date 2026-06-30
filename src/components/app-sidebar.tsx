@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/sidebar";
 import { scenarios } from "@/data/scenarios";
 import { AlbyIcon } from "@/icons/AlbyIcon";
-import { BitcoinConnectIcon } from "@/icons/BitcoinConnectIcon";
 
 const externalLinks = [
   {
@@ -37,7 +36,7 @@ const externalLinks = [
   },
   {
     title: "Sandbox Source Code",
-    url: "https://github.com/getAlby/sandbox",
+    url: "https://github.com/welliv/shopstr-sandbox",
     icon: <CodeIcon className="size-4" />,
   },
   {
@@ -52,12 +51,17 @@ const externalLinks = [
   },
 ];
 
+const sectionLabels: Record<string, string> = {
+  scenarios: "Lightning Scenarios",
+  "402": "402 · Agent Payments",
+  "bitcoin-connect": "Bitcoin Connect",
+};
+
 export function AppSidebar() {
   const location = useLocation();
-  // Extract scenarioId from pathname (e.g., "/simple-payment" or "/#/simple-payment")
   const scenarioId = location.pathname.split("/").filter(Boolean)[0];
 
-  const regularScenarios = scenarios.filter(
+  const lightningScenarios = scenarios.filter(
     (s) => !s.section || s.section === "scenarios",
   );
   const fourzerotwoScenarios = scenarios.filter((s) => s.section === "402");
@@ -65,15 +69,21 @@ export function AppSidebar() {
     (s) => s.section === "bitcoin-connect",
   );
 
+  const sections = [
+    { label: "scenarios", items: lightningScenarios },
+    { label: "402", items: fourzerotwoScenarios },
+    { label: "bitcoin-connect", items: bitcoinConnectScenarios },
+  ].filter((s) => s.items.length > 0);
+
   return (
     <Sidebar>
       <SidebarHeader className="">
         <div className="flex items-center gap-2">
           <AlbyIcon className="size-6" />
           <div>
-            <h1 className="font-semibold">Alby Sandbox</h1>
+            <h1 className="font-semibold">Shopstr Sandbox</h1>
             <p className="text-xs text-muted-foreground">
-              Explore Lightning App Scenarios
+              Agent Commerce on Lightning
             </p>
           </div>
         </div>
@@ -93,31 +103,18 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {regularScenarios.map((scenario) => (
-                <SidebarMenuItem key={scenario.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={scenarioId === scenario.id}
-                  >
-                    <Link to={`/${scenario.id}`}>
-                      <span>{scenario.icon}</span>
-                      <span>{scenario.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {/* 402 Section */}
-        {fourzerotwoScenarios.length > 0 && (
-          <SidebarGroup className="-mt-4">
+
+        {sections.map((section) => (
+          <SidebarGroup key={section.label} className="-mt-4">
             <SidebarGroupLabel className="text-xs font-semibold tracking-widest text-muted-foreground">
-              402
+              {sectionLabels[section.label] || section.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {fourzerotwoScenarios.map((scenario) => (
+                {section.items.map((scenario) => (
                   <SidebarMenuItem key={scenario.id}>
                     <SidebarMenuButton
                       asChild
@@ -133,32 +130,7 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
-        {/* Bitcoin Connect Section */}
-        <SidebarGroup className="-mt-4">
-          <SidebarGroupLabel className="-mb-1">
-            <div title="Bitcoin Connect: let bitcoin surf the web" className="pointer-events-none">
-              <BitcoinConnectIcon className="size-20" />
-            </div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {bitcoinConnectScenarios.map((scenario) => (
-                <SidebarMenuItem key={scenario.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={scenarioId === scenario.id}
-                  >
-                    <Link to={`/${scenario.id}`}>
-                      <span>{scenario.icon}</span>
-                      <span>{scenario.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarSeparator className="mx-0" />
