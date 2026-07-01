@@ -35,7 +35,7 @@ const externalLinks = [
   },
   {
     title: "Sandbox Source Code",
-    url: "https://github.com/welliv/shopstr-sandbox",
+    url: "https://github.com/welliv/hermes-agent-accelerated-business-hackathon",
     icon: <CodeIcon className="size-4" />,
   },
   {
