@@ -1,14 +1,2 @@
-export { SimplePaymentScenario } from "./simple-payment";
-export { LookupInvoiceScenario } from "./lookup-invoice";
-export { LightningAddressScenario } from "./lightning-address";
-export { NotificationsScenario } from "./notifications";
-export { SubscriptionPaymentsScenario } from "./subscription-payments";
-export { HoldInvoiceScenario } from "./hold-invoice";
-export { TransactionHistoryScenario } from "./transaction-history";
-export { ProofOfPaymentScenario } from "./proof-of-payment";
-export { DecodeBolt11InvoiceScenario } from "./decode-bolt11-invoice";
-export { FiatConversionScenario } from "./fiat-conversion";
-export { PaymentForwardingScenario } from "./payment-forwarding";
-export { PaymentPrismsScenario } from "./payment-prisms";
-export { LnurlVerifyScenario } from "./lnurl-verify";
-export { WrappedInvoicesScenario } from "./wrapped-invoices";
+// All Lightning scenario components have been removed.
+// Only 402 Agent Payments scenarios remain (see ../402/).

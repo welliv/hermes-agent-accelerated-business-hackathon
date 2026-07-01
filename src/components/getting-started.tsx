@@ -2,81 +2,57 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { scenarios } from "@/data/scenarios";
-import { WALLET_PERSONAS } from "@/types/wallet";
 
 const slides = [
   {
-    title: "Meet Alice & Bob",
+    title: "Stripe Skills for Hermes: Agent Buys AI Inference",
     content: (
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex items-center gap-12 text-7xl">
-          <div className="flex flex-col items-center gap-2">
-            <span>{WALLET_PERSONAS.alice.emoji}</span>
-            <span className="text-lg font-medium text-foreground">Alice</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <span>{WALLET_PERSONAS.bob.emoji}</span>
-            <span className="text-lg font-medium text-foreground">Bob</span>
-          </div>
-        </div>
-        <p className="text-center text-lg text-muted-foreground">
-          They'll be sending payments to each other.
+      <div className="flex flex-col items-center gap-6 text-center">
+        <span className="text-7xl">💳</span>
+        <p className="text-lg text-muted-foreground max-w-xl">
+          Autonomous agents discover, pay for, and consume AI models via Stripe
+          MPP — no checkout, no API keys, no prepaid credits.
         </p>
-
-        <div />
-        <p className="text-center text-sm text-muted-foreground">
-          ...and later some more friends will join too.
+        <p className="text-sm text-muted-foreground">
+          Built for the NVIDIA × Stripe × Nous Research Hermes Agent Hackathon
         </p>
-        <div className="flex items-center gap-6 text-3xl">
-          <div className="flex flex-col items-center gap-1">
-            <span>{WALLET_PERSONAS.charlie.emoji}</span>
-            <span className="text-sm font-medium text-muted-foreground">
-              Charlie
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <span>{WALLET_PERSONAS.david.emoji}</span>
-            <span className="text-sm font-medium text-muted-foreground">
-              David
-            </span>
-          </div>
-        </div>
       </div>
     ),
   },
   {
-    title: "The Native Currency of the AI Age",
+    title: "How It Works",
     content: (
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-6 text-center">
         <span className="text-7xl">⚡</span>
-        <p className="text-center text-lg text-muted-foreground">
-          Bitcoin is the permissionless payment layer for the internet.
+        <p className="text-lg text-muted-foreground max-w-xl">
+          1. Agent submits a task → backend recommends optimal model (Nemotron 3
+          Ultra, GPT-4o, etc.) with price
         </p>
-        <p className="text-center text-lg text-muted-foreground">
-          Lightning makes it instant, cheap, and perfect for apps and autonomous
-          agents.
+        <p className="text-lg text-muted-foreground max-w-xl">
+          2. Server returns HTTP 402 + Stripe challenge → agent creates
+          PaymentIntent, pays with pm_card_visa (test card)
         </p>
-        <p className="text-center text-lg text-muted-foreground">
-          NWC connects apps and autonomous agents to lightning wallets.
+        <p className="text-lg text-muted-foreground max-w-xl">
+          3. Server verifies payment, runs model via OpenRouter MCP, returns
+          result → provider paid per request
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Zero human intervention. Zero API key management. Per-request billing.
         </p>
       </div>
     ),
   },
   {
-    title: "Explore Real-World Scenarios",
+    title: "Ready to Try",
     content: (
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-6 text-center">
         <span className="text-7xl">🚀</span>
-        <p className="text-center text-lg text-muted-foreground">
-          Use the interactive sandbox to test NWC connections and explore
-          real-world Lightning use cases with specific code examples for your
-          app.
+        <p className="text-lg text-muted-foreground max-w-xl">
+          Connect wallets (Alice as provider, Bob as agent) to unlock the live
+          demo.
         </p>
-
-        <p className="text-center text-lg text-muted-foreground">
-          Test wallets allow you to instantly get started without any setup.
-          Jumpstart your development with pre-built scenarios designed for
-          real-world Bitcoin use cases.
+        <p className="text-sm text-muted-foreground">
+          Test wallets provided via Stripe in test mode
         </p>
       </div>
     ),
@@ -104,7 +80,7 @@ export function GettingStarted() {
           {isLastSlide ? (
             <Button asChild>
               <Link to={`/${scenarios[0].id}`}>
-                Try the first scenario &rarr;
+                Try the SPEND demo &rarr;
               </Link>
             </Button>
           ) : (

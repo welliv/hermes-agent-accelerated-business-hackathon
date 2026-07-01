@@ -45,7 +45,7 @@ export function FlowDiagram() {
                 </div>
                 <span className="mt-2 font-medium">{wallet.name}</span>
                 <span className="text-sm text-muted-foreground">
-                  {wallet.balance?.toLocaleString() ?? "—"} sats
+                  {`$${((wallet.balance ?? 0) / 100).toFixed(2)}`}
                 </span>
               </div>
             ))}
@@ -78,7 +78,7 @@ export function FlowDiagram() {
               </div>
               <span className="mt-2 font-medium">{wallet.name}</span>
               <span className="text-sm text-muted-foreground">
-                {wallet.balance?.toLocaleString() ?? "—"} sats
+                {`$${((wallet.balance ?? 0) / 100).toFixed(2)}`}
               </span>
             </div>
           ))}

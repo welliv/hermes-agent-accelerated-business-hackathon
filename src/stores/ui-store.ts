@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { SnippetCategory } from '@/data/code-snippets';
 import type { PromptCategory } from '@/data/prompts';
 
-type VisualizationTab = 'log' | 'flow' | 'chart' | 'snippets' | 'prompts' | 'production';
+type VisualizationTab = 'log' | 'flow' | 'chart' | 'snippets' | 'prompts' | 'production' | 'learn';
 
 interface UIState {
   visualizationTab: VisualizationTab;
@@ -16,17 +16,17 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   visualizationTab: 'log',
-  snippetCategory: 'getting-started',
+  snippetCategory: 'this-scenario',
   promptCategory: 'this-scenario',
 
   setVisualizationTab: (tab) => set({ visualizationTab: tab }),
   setSnippetCategory: (category) => set({ snippetCategory: category }),
   setPromptCategory: (category) => set({ promptCategory: category }),
 
-  // Convenience method to open Code Snippets tab on Getting Started
+  // Convenience method to open Code Snippets tab on This Scenario
   openCodeSnippetsHelp: () =>
     set({
       visualizationTab: 'snippets',
-      snippetCategory: 'getting-started',
+      snippetCategory: 'this-scenario',
     }),
 }));

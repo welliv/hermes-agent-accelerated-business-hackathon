@@ -1,14 +1,6 @@
 import { useState } from 'react';
 import {
   Play,
-  Rocket,
-  Terminal,
-  Info,
-  Send,
-  Receipt,
-  AtSign,
-  DollarSign,
-  Code,
   ShieldCheck,
   Copy,
   Check,
@@ -27,14 +19,6 @@ import { cn } from '@/lib/utils';
 
 const CATEGORY_ICONS: Record<SnippetCategory, React.ReactNode> = {
   'this-scenario': <Play className="h-4 w-4" />,
-  'getting-started': <Rocket className="h-4 w-4" />,
-  repl: <Terminal className="h-4 w-4" />,
-  basics: <Info className="h-4 w-4" />,
-  payments: <Send className="h-4 w-4" />,
-  invoices: <Receipt className="h-4 w-4" />,
-  'lightning-address': <AtSign className="h-4 w-4" />,
-  fiat: <DollarSign className="h-4 w-4" />,
-  advanced: <Code className="h-4 w-4" />,
   '402': <ShieldCheck className="h-4 w-4" />,
 };
 

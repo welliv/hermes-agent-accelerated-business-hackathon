@@ -21,17 +21,16 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { scenarios } from "@/data/scenarios";
-import { AlbyIcon } from "@/icons/AlbyIcon";
 
 const externalLinks = [
   {
-    title: "Alby Bitcoin Builder Skill",
-    url: "https://github.com/getalby/builder-skill",
+    title: "Stripe Link CLI Skill",
+    url: "https://hermes-agent.nousresearch.com/docs/user-guide/skills/optional/payments/payments-stripe-link-cli",
     icon: <BotIcon className="size-4" />,
   },
   {
-    title: "NWC Faucet",
-    url: "https://faucet.nwc.dev",
+    title: "Stripe Test Mode",
+    url: "https://dashboard.stripe.com/test",
     icon: <DropletsIcon className="size-4" />,
   },
   {
@@ -40,50 +39,40 @@ const externalLinks = [
     icon: <CodeIcon className="size-4" />,
   },
   {
-    title: "Feedback",
-    url: "https://feedback.getalby.com/-alby-sandbox-request-a-feature",
+    title: "Hermes Docs",
+    url: "https://hermes-agent.nousresearch.com/docs",
     icon: <LightbulbIcon className="size-4" />,
   },
   {
-    title: "Help",
-    url: "https://support.getalby.com",
+    title: "MPP Spec",
+    url: "https://github.com/stripe/agent-toolkit",
     icon: <HelpCircleIcon className="size-4" />,
   },
 ];
 
 const sectionLabels: Record<string, string> = {
-  scenarios: "Lightning Scenarios",
-  "402": "402 · Agent Payments",
-  "bitcoin-connect": "Bitcoin Connect",
+  "402": "402 · Agent Payments (Stripe MPP)",
 };
 
 export function AppSidebar() {
   const location = useLocation();
   const scenarioId = location.pathname.split("/").filter(Boolean)[0];
 
-  const lightningScenarios = scenarios.filter(
-    (s) => !s.section || s.section === "scenarios",
-  );
   const fourzerotwoScenarios = scenarios.filter((s) => s.section === "402");
-  const bitcoinConnectScenarios = scenarios.filter(
-    (s) => s.section === "bitcoin-connect",
-  );
 
   const sections = [
-    { label: "scenarios", items: lightningScenarios },
     { label: "402", items: fourzerotwoScenarios },
-    { label: "bitcoin-connect", items: bitcoinConnectScenarios },
   ].filter((s) => s.items.length > 0);
 
   return (
     <Sidebar>
       <SidebarHeader className="">
         <div className="flex items-center gap-2">
-          <AlbyIcon className="size-6" />
+          <BotIcon className="size-6" />
           <div>
-            <h1 className="font-semibold">Shopstr Sandbox</h1>
+            <h1 className="font-semibold">Stripe MPP Sandbox</h1>
             <p className="text-xs text-muted-foreground">
-              Agent Commerce on Lightning
+              MPP-Paid AI Inference for Agents
             </p>
           </div>
         </div>

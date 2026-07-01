@@ -1,20 +1,16 @@
 import {
   FileText,
-  GitBranch,
-  LineChart,
   Code2,
   MessageSquareText,
-  Rocket,
+  GraduationCap,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TransactionLog,
-  FlowDiagram,
-  BalanceChart,
   CodeSnippets,
   PromptsTab,
-  ProductionWallet,
+  LearnTab,
 } from "./visualizations";
 import { useUIStore } from "@/stores";
 
@@ -48,14 +44,6 @@ export function VisualizationPanel() {
             <FileText className="h-4 w-4 shrink-0" />
             Log
           </TabsTrigger>
-          <TabsTrigger value="flow" className="gap-2">
-            <GitBranch className="h-4 w-4 shrink-0" />
-            Flow Diagram
-          </TabsTrigger>
-          <TabsTrigger value="chart" className="gap-2">
-            <LineChart className="h-4 w-4 shrink-0" />
-            Balance Chart
-          </TabsTrigger>
           <TabsTrigger value="snippets" className="gap-2">
             <Code2 className="h-4 w-4 shrink-0" />
             Code
@@ -64,9 +52,9 @@ export function VisualizationPanel() {
             <MessageSquareText className="h-4 w-4 shrink-0" />
             Example Prompts
           </TabsTrigger>
-          <TabsTrigger value="production" className="gap-2">
-            <Rocket className="h-4 w-4 shrink-0" />
-            Production
+          <TabsTrigger value="learn" className="gap-2">
+            <GraduationCap className="h-4 w-4 shrink-0" />
+            Learn
           </TabsTrigger>
         </TabsList>
       </div>
@@ -75,24 +63,16 @@ export function VisualizationPanel() {
         <TransactionLog />
       </TabsContent>
 
-      <TabsContent value="flow" className="mt-0 flex-1 overflow-hidden">
-        <FlowDiagram />
-      </TabsContent>
-
-      <TabsContent value="chart" className="mt-0 flex-1 overflow-hidden">
-        <BalanceChart />
-      </TabsContent>
-
       <TabsContent value="snippets" className="mt-0 flex-1 overflow-hidden">
         <CodeSnippets />
       </TabsContent>
 
-      <TabsContent value="prompts" className="mt-0 flex-1 overflow-hidden">
+      <TabsContent value="prompts" className="mt-0 flex-1 overflow-y-auto">
         <PromptsTab />
       </TabsContent>
 
-      <TabsContent value="production" className="mt-0 flex-1 overflow-hidden">
-        <ProductionWallet />
+      <TabsContent value="learn" className="mt-0 flex-1 overflow-y-auto">
+        <LearnTab />
       </TabsContent>
     </Tabs>
   );

@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Sparkles,
   Zap,
-  Bot,
   CheckCircle2,
   DollarSign,
 } from "lucide-react";
@@ -15,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTransactionStore } from "@/stores";
+import { WALLET_PERSONAS } from "@/types";
 
 const BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
 const DEFAULT_PRICE_CENTS = 50;
@@ -188,78 +188,173 @@ function StripeCustomerPanel() {
     challenge_id: string;
     amount_cents: number;
   } | null>(null);
+  const [flowStep, setFlowStep] = useState<string | null>(null);
   const [payment, setPayment] = useState<PaymentResult | null>(null);
   const [execution, setExecution] = useState<ExecutionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [flowStep, setFlowStep] = useState<string>("");
 
   const {
     addTransaction,
     updateTransaction,
+    addFlowStep,
+    updateFlowStep,
   } = useTransactionStore();
 
   const reset = () => {
+    setTaskInput("");
     setRecommendation(null);
+    setSelectedModel("best");
     setChallenge(null);
+    setFlowStep(null);
     setPayment(null);
     setExecution(null);
     setError(null);
-    setFlowStep("");
+    setIsPaying(false);
   };
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setError(null);
-    reset();
+    setSelectedModel("best");
+    setFlowStep("Analyzing task with OpenRouter MCP...");
 
     try {
-      setFlowStep("Analyzing task with OpenRouter MCP...");
-      const res = await fetch(`${BACKEND_URL}/api/analyze-task`, {
+      const response = await fetch(`${BACKEND_URL}/api/analyze-task`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: taskInput }),
       });
 
-      if (!res.ok) throw new Error(`Backend error: ${res.status}`);
-      const data = await res.json();
-      setRecommendation(data);
-      setFlowStep("");
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      setRecommendation({
+        model: data.model,
+        modelName: data.modelName,
+        costSats: data.costSats,
+        costUsd: data.costUsd,
+        reason: data.reason,
+        contextLength: data.contextLength,
+        economical: data.economical
+          ? {
+              model: data.economical.model,
+              modelName: data.economical.modelName,
+              costSats: data.economical.costSats,
+              costUsd: data.economical.costUsd,
+              reason: data.economical.reason,
+              contextLength: data.economical.contextLength,
+            }
+          : null,
+      });
+      setFlowStep(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
-      setFlowStep("");
+      // Fallback to mock recommendation
+      const task = taskInput.toLowerCase();
+      let recommendationData;
+      if (task.includes("summarize") || task.includes("pdf") || task.includes("document")) {
+        recommendationData = {
+          model: "anthropic/claude-3.5-sonnet",
+          modelName: "Claude 3.5 Sonnet",
+          costSats: 5000,
+          costUsd: "~$3.00",
+          reason: "Best for long-context document analysis and summarization",
+          economical: null,
+        };
+      } else if (task.includes("code") || task.includes("script") || task.includes("python") || task.includes("programming")) {
+        recommendationData = {
+          model: "openai/gpt-4o",
+          modelName: "GPT-4o",
+          costSats: 3000,
+          costUsd: "~$1.80",
+          reason: "Excellent code generation and reasoning capabilities",
+          economical: {
+            model: "openai/gpt-4o-mini",
+            modelName: "GPT-4o-mini",
+            costSats: 500,
+            costUsd: "~$0.30",
+            reason: "Cost-effective for coding tasks",
+            contextLength: 128000,
+          },
+        };
+      } else if (task.includes("creative") || task.includes("write") || task.includes("story") || task.includes("blog")) {
+        recommendationData = {
+          model: "anthropic/claude-3.5-sonnet",
+          modelName: "Claude 3.5 Sonnet",
+          costSats: 2500,
+          costUsd: "~$1.50",
+          reason: "Superior creative writing and natural language flow",
+          economical: null,
+        };
+      } else if (task.includes("analyze") || task.includes("data") || task.includes("reasoning")) {
+        recommendationData = {
+          model: "google/gemini-1.5-pro",
+          modelName: "Gemini 1.5 Pro",
+          costSats: 4000,
+          costUsd: "~$2.40",
+          reason: "Strong analytical reasoning and large context window",
+          economical: null,
+        };
+      } else {
+        recommendationData = {
+          model: "openai/gpt-4o-mini",
+          modelName: "GPT-4o-mini",
+          costSats: 500,
+          costUsd: "~$0.30",
+          reason: "Cost-effective for general purpose tasks",
+          economical: null,
+        };
+      }
+      setRecommendation(recommendationData);
+      setFlowStep(null);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleAgentPayAndExecute = async () => {
+  const handleConfirmAndPay = async () => {
     if (!recommendation) return;
 
-    const selected =
-      selectedModel === "best"
-        ? recommendation
-        : recommendation.economical || recommendation;
+    const selected = selectedModel === "best" ? recommendation : (recommendation.economical || recommendation);
 
     setIsPaying(true);
     setError(null);
+    setFlowStep("Creating Stripe payment challenge...");
+    setChallenge(null);
+    setPayment(null);
+    setExecution(null);
 
+    // Track transaction (amount in cents for dollar display)
+    const priceUsd = parseFloat(selected.costUsd.replace("$", "").replace("~", ""));
+    const amountCents = Math.max(50, Math.round(priceUsd * 100));
     const txId = addTransaction({
       type: "payment_sent",
       status: "pending",
       fromWallet: "bob",
       toWallet: "alice",
-      amount: selected.costSats,
+      amount: amountCents,
       description: `Stripe MPP: ${taskInput.slice(0, 50)}`,
       snippetIds: ["fetch-with-l402"],
     });
 
-    try {
-      // Step 1: Create payment challenge
-      setFlowStep("Step 1/4: Creating 402 payment challenge...");
-      const costUsd = parseFloat(selected.costUsd.replace("$", ""));
-      const amountCents = Math.max(50, Math.round(costUsd * 100));
+    // Track flow steps
+    const step1Id = addFlowStep({
+      fromWallet: "bob",
+      toWallet: "alice",
+      label: `POST /api/stripe/analyze-and-pay (${selected.model})`,
+      direction: "left",
+      status: "pending",
+      snippetIds: ["fetch-with-l402"],
+    });
 
-      const chalRes = await fetch(`${BACKEND_URL}/api/stripe/challenge`, {
+    try {
+      // Step 1: Create challenge
+      setFlowStep("Creating Stripe payment challenge...");
+
+      const challengeRes = await fetch(`${BACKEND_URL}/api/stripe/challenge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -269,36 +364,58 @@ function StripeCustomerPanel() {
           amountCents,
         }),
       });
-      if (!chalRes.ok) throw new Error(`Challenge creation failed: ${chalRes.status}`);
-      const chalData = await chalRes.json();
-      setChallenge({
-        challenge_id: chalData.challenge_id,
-        amount_cents: amountCents,
+
+      if (!challengeRes.ok) {
+        throw new Error(`Challenge creation failed: ${challengeRes.status}`);
+      }
+
+      const challengeData = await challengeRes.json();
+      setChallenge({ challenge_id: challengeData.challenge_id, amount_cents: amountCents });
+
+      updateFlowStep(step1Id, {
+        label: `POST /api/stripe/challenge — ${amountCents}¢ challenge created`,
+        status: "success",
       });
 
-      // Step 2: Create Stripe PaymentIntent
-      setFlowStep("Step 2/4: Creating Stripe PaymentIntent...");
+      // Step 2: Create PaymentIntent
+      setFlowStep("Creating Stripe PaymentIntent...");
       const piRes = await fetch(`${BACKEND_URL}/api/stripe/payment-intent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challenge_id: chalData.challenge_id }),
+        body: JSON.stringify({ challenge_id: challengeData.challenge_id }),
       });
-      if (!piRes.ok) throw new Error(`PaymentIntent creation failed: ${piRes.status}`);
+
+      if (!piRes.ok) {
+        throw new Error(`PaymentIntent creation failed: ${piRes.status}`);
+      }
+
       const piData = await piRes.json();
 
-      // Step 3: Agent pays autonomously (test card)
-      setFlowStep("Step 3/4: Agent paying via Stripe (test card)...");
+      addFlowStep({
+        fromWallet: "alice",
+        toWallet: "bob",
+        label: `PaymentIntent created: ${piData.payment_intent_id}`,
+        direction: "right",
+        status: "success",
+      });
+
+      // Step 3: Agent pays via Stripe test card
+      setFlowStep("Agent paying via Stripe (test card)...");
       const payRes = await fetch(`${BACKEND_URL}/api/stripe/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentIntentId: piData.payment_intent_id }),
       });
-      if (!payRes.ok) throw new Error(`Payment failed: ${payRes.status}`);
-      const payData = await payRes.json();
 
+      if (!payRes.ok) {
+        throw new Error(`Payment failed: ${payRes.status}`);
+      }
+
+      const payData = await payRes.json();
       if (!payData.paid) {
         throw new Error(`Payment not succeeded: ${payData.status}`);
       }
+
       setPayment({
         payment_intent_id: payData.payment_intent_id,
         paid: true,
@@ -306,8 +423,21 @@ function StripeCustomerPanel() {
         amount_cents: amountCents,
       });
 
-      // Step 4: Execute the task (payment verified)
-      setFlowStep("Step 4/4: Executing AI inference (payment verified)...");
+      updateFlowStep(step1Id, {
+        label: `Payment succeeded (${amountCents}¢ / $${(amountCents / 100).toFixed(2)})`,
+        status: "success",
+      });
+
+      addFlowStep({
+        fromWallet: "bob",
+        toWallet: "alice",
+        label: `Stripe PaymentIntent confirmed ✓`,
+        direction: "left",
+        status: "success",
+      });
+
+      // Step 4: Execute AI inference
+      setFlowStep("Executing AI inference (payment verified)...");
       const execRes = await fetch(`${BACKEND_URL}/api/stripe/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -319,119 +449,120 @@ function StripeCustomerPanel() {
       });
 
       const execData = await execRes.json();
+
       if (execData.success) {
         setExecution({
           model: execData.model,
           response: execData.result,
           tokens_used: execData.tokensUsed,
         });
-        updateTransaction(txId, {
+
+        addFlowStep({
+          fromWallet: "alice",
+          toWallet: "bob",
+          label: `AI response delivered (${execData.tokensUsed || 0} tokens)`,
+          direction: "right",
           status: "success",
-          description: `Stripe MPP succeeded: ${selected.modelName}`,
         });
-        setFlowStep("✅ Complete — agent paid and executed autonomously!");
       } else {
-        // Payment succeeded but execution failed (e.g. no OpenRouter key)
         setExecution({
-          model: execData.model || selected.model,
+          model: execData.model,
           response: null,
-          tokens_used: null,
+          tokens_used: 0,
         });
-        setError(
-          execData.error ||
-            "Payment succeeded but AI execution failed (needs valid OpenRouter API key for inference)"
-        );
-        updateTransaction(txId, {
+
+        addFlowStep({
+          fromWallet: "alice",
+          toWallet: "bob",
+          label: `Payment verified ✓ — Execution needs OpenRouter API key`,
+          direction: "right",
           status: "success",
-          description: `Payment succeeded, execution needs API key`,
         });
-        setFlowStep("✅ Payment succeeded · ⚠️ Execution needs OpenRouter API key");
       }
+
+      updateTransaction(txId, {
+        status: "success",
+        description: `Stripe MPP succeeded: ${selected.modelName}`,
+      });
+
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+
       updateTransaction(txId, {
         status: "error",
-        description: `Stripe MPP failed: ${msg}`,
+        description: `Stripe MPP failed: ${errorMessage}`,
       });
-      setFlowStep("");
+
+      if (flowStep) {
+        updateFlowStep(step1Id, {
+          label: `Failed: ${errorMessage}`,
+          status: "error",
+        });
+      }
     } finally {
       setIsPaying(false);
+      setFlowStep(null);
     }
   };
 
-  const isCompleted = payment?.paid && execution !== null;
+  const isCompleted = !!payment;
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <span>🤖</span>
-          <span>Bob (Agent): Autonomous Purchase & Inference</span>
+          <span>{WALLET_PERSONAS.bob.emoji}</span>
+          <span>Bob (Agent): Autonomous AI Procurement</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Bob's agent encounters the{" "}
-          <code className="text-xs">402 Payment Required</code> challenge,
-          creates a Stripe PaymentIntent, pays with a test card, and executes
-          the AI task — all autonomously, similar to how NWC handles Lightning
-          payments.
+          Bob autonomously discovers the optimal AI model, creates a Stripe
+          PaymentIntent, pays with the test card (pm_card_visa), and executes
+          the inference — all without human intervention.
         </p>
 
         <p className="text-xs text-muted-foreground/60 flex items-center gap-1.5">
-          <Lightbulb className="size-3.5 shrink-0 text-yellow-500/70" />
-          The agent pays via Stripe test card (pm_card_visa). No human checkout.
+          <Lightbulb className="size-3.5 shrink-0 text-yellow-500/70" /> The agent
+          pays via Stripe test card (pm_card_visa). No human checkout.
         </p>
 
-        {error && (
-          <div className="rounded-lg bg-destructive/10 p-2 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* Interactive Task Input Section */}
         <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
           <div className="flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">AI Task Assistant (Stripe MPP)</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Enter a task → Get model recommendation → Agent pays via Stripe →
-            Execute inference
+            Enter a task → Get model recommendation + price → Confirm → Pay via
+            Stripe MPP
           </p>
 
           <textarea
             value={taskInput}
             onChange={(e) => setTaskInput(e.target.value)}
-            placeholder="e.g., 'Which is the best and most economical coding model?'"
+            placeholder="e.g., 'Summarize a 50-page PDF' or 'Write a Python script to scrape a website'"
             rows={3}
             className="w-full font-mono text-xs p-2 rounded bg-background border"
             disabled={isAnalyzing || isPaying}
           />
 
-          {/* Model Recommendation */}
-          {recommendation && !isPaying && !payment && (
+          {recommendation !== null && !isPaying ? (
             <div className="space-y-2">
               {recommendation.economical && (
                 <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-1 mb-1">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                      Choose Model:
-                    </span>
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Choose Model:</span>
                     <select
                       value={selectedModel}
-                      onChange={(e) =>
-                        setSelectedModel(e.target.value as "best" | "economical")
-                      }
+                      onChange={(e) => setSelectedModel(e.target.value as "best" | "economical")}
                       className="text-xs px-2 py-1 bg-white dark:bg-gray-800 border rounded"
                     >
-                      <option value="best">
-                        🏆 Best Quality - {recommendation.modelName}
-                      </option>
-                      <option value="economical">
-                        💰 Most Economical - {recommendation.economical.modelName}
-                      </option>
+                      <option value="best">🏆 Best Quality - {recommendation.modelName}</option>
+                      <option value="economical">💰 Most Economical - {recommendation.economical.modelName}</option>
                     </select>
                   </div>
                 </div>
@@ -444,29 +575,13 @@ function StripeCustomerPanel() {
                   </span>
                 </div>
                 <div className="font-mono text-[10px] text-muted-foreground">
-                  Model:{" "}
-                  {selectedModel === "best"
-                    ? recommendation.modelName
-                    : recommendation.economical?.modelName || recommendation.modelName}
-                  <br />
-                  Est. Cost:{" "}
-                  {selectedModel === "best"
-                    ? recommendation.costUsd
-                    : recommendation.economical?.costUsd || recommendation.costUsd}{" "}
-                  (
-                  {selectedModel === "best"
-                    ? recommendation.costSats
-                    : recommendation.economical?.costSats || recommendation.costSats}{" "}
-                  sats)
-                  <br />
-                  Reason:{" "}
-                  {selectedModel === "best"
-                    ? recommendation.reason
-                    : recommendation.economical?.reason || recommendation.reason}
+                  Model: {selectedModel === "best" ? recommendation.modelName : recommendation.economical?.modelName || recommendation.modelName}<br />
+                  Est. Cost: {selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd}<br />
+                  Reason: {selectedModel === "best" ? recommendation.reason : recommendation.economical?.reason || recommendation.reason}
                 </div>
               </div>
               <Button
-                onClick={handleAgentPayAndExecute}
+                onClick={handleConfirmAndPay}
                 disabled={isPaying}
                 className="w-full"
                 variant="default"
@@ -474,20 +589,17 @@ function StripeCustomerPanel() {
                 {isPaying ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {flowStep || "Processing..."}
+                    Processing Stripe MPP payment...
                   </>
                 ) : (
                   <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Agent Pays & Executes (Stripe)
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Confirm & Pay {selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd}
                   </>
                 )}
               </Button>
             </div>
-          )}
-
-          {/* Analyze button (when no recommendation yet) */}
-          {!recommendation && !isPaying && (
+          ) : (
             <Button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !taskInput.trim() || isPaying}
@@ -497,7 +609,7 @@ function StripeCustomerPanel() {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {flowStep || "Analyzing with OpenRouter MCP..."}
+                  Analyzing with OpenRouter MCP...
                 </>
               ) : (
                 <>
@@ -519,8 +631,7 @@ function StripeCustomerPanel() {
                 <div className="font-mono text-[10px] text-muted-foreground">
                   Challenge: {challenge.challenge_id}
                   <br />
-                  Amount: {challenge.amount_cents} cents ($
-                  {(challenge.amount_cents / 100).toFixed(2)})
+                  Amount: {challenge.amount_cents} cents (${(challenge.amount_cents / 100).toFixed(2)})
                 </div>
               )}
             </div>
@@ -531,9 +642,7 @@ function StripeCustomerPanel() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
                 <CheckCircle2 className="h-4 w-4" />
-                <span className="font-medium">
-                  Agent Paid & Executed Successfully
-                </span>
+                <span className="font-medium">Agent Paid & Executed Successfully</span>
               </div>
 
               {/* Payment Receipt */}
@@ -545,8 +654,7 @@ function StripeCustomerPanel() {
                 <div className="font-mono text-[10px] text-muted-foreground">
                   PaymentIntent: {payment!.payment_intent_id}
                   <br />
-                  Amount: {payment!.amount_cents} cents ($
-                  {(payment!.amount_cents / 100).toFixed(2)})
+                  Amount: {payment!.amount_cents} cents (${(payment!.amount_cents / 100).toFixed(2)})
                   <br />
                   Status: succeeded ✅
                   <br />

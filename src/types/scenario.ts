@@ -2,7 +2,7 @@ import type { SnippetId } from "@/data/code-snippets";
 
 export type ScenarioComplexity = "simplest" | "simple" | "medium" | "advanced" | "expert";
 
-export type ScenarioSection = "scenarios" | "402" | "bitcoin-connect";
+export type ScenarioSection = "402";
 
 export interface ScenarioPrompt {
   title: string;

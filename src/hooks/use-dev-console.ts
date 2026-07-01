@@ -35,24 +35,15 @@ export function useDevConsole() {
     // @ts-expect-error - getFormattedFiatValue is available but may not be in types
     window.getFormattedFiatValue = getFormattedFiatValue;
 
-    // Initialize alby namespace
-    window.alby = {
-      wallets: {},
-      tools: {
-        LightningAddress,
-        Invoice,
-      },
-    };
-
     // Log welcome message once
     if (!hasLoggedWelcome.current) {
       hasLoggedWelcome.current = true;
       console.log(
-        "%c⚡ Alby Sandbox",
-        "font-size: 16px; font-weight: bold; color: #F7931A; background: #1a1a2e; padding: 4px 8px; border-radius: 4px;",
+        "%c⚡ Stripe MPP Sandbox",
+        "font-size: 16px; font-weight: bold; color: #635BFF; background: #1a1a2e; padding: 4px 8px; border-radius: 4px;",
       );
       console.log(
-        "%cLightning tools available in browser console:",
+        "%cStripe tools available in browser console:",
         "font-weight: bold;",
       );
       console.log(
@@ -86,9 +77,6 @@ export function useDevConsole() {
         "",
         "font-weight: bold;",
       );
-      console.log(
-        "Or via namespace: alby.wallets.alice, alby.wallets.bob, etc.",
-      );
       console.log("");
       console.log(
         "%cExample:%c await alice.getBalance()",
@@ -112,9 +100,6 @@ export function useDevConsole() {
       for (const walletId of WALLET_IDS) {
         delete (window as Partial<Window>)[walletId];
       }
-
-      // Remove alby namespace
-      delete (window as Partial<Window>).alby;
     };
   }, []);
 
@@ -131,11 +116,6 @@ export function useDevConsole() {
         (window as unknown as Record<string, unknown>)[walletId] =
           extendedClient;
 
-        if (window.alby) {
-          window.alby.wallets[walletId as keyof typeof window.alby.wallets] =
-            extendedClient;
-        }
-
         // Log when a new wallet becomes available
         console.log(
           `%c⚡ ${walletId}%c wallet connected - available as %cwindow.${walletId}`,
@@ -147,11 +127,6 @@ export function useDevConsole() {
         // Wallet is disconnected - remove the client
         if ((window as unknown as Record<string, unknown>)[walletId]) {
           delete (window as Partial<Window>)[walletId];
-          if (window.alby?.wallets) {
-            delete window.alby.wallets[
-              walletId as keyof typeof window.alby.wallets
-            ];
-          }
         }
       }
     }

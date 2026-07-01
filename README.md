@@ -1,27 +1,35 @@
-# Shopstr Sandbox
+# Stripe MPP Sandbox
 
-Customized version of the Alby Sandbox integrated with our **Shopstr NWC Faucet**.
+Stripe Skills for Hermes — Agent Commerce demo for the Hermes Agent Accelerated Business Hackathon (NVIDIA × Stripe × Nous Research).
 
-## What it does
+## What this is
 
-Educational Lightning Network demo that lets you test real NWC scenarios using test wallets created instantly via our faucet:
+A sandbox where an AI agent buys AI inference through Stripe's Machine Payments Protocol. No checkout, no API keys, no prepaid credits. The agent discovers a model, gets a price, pays per request, and gets the result back.
 
-- One-click "Create Test Wallet" (prompts for username → creates Nostr identity + funded wallet + Lightning address)
-- Automatic NWC connection (no manual pasting of secrets)
-- Full support for LNURL-pay, NIP-05, balance top-ups, QR codes, and all Alby Sandbox scenarios
-- Seamless integration with local Alby Hub (signet)
+Built for model providers who want to sell inference the way Stripe sells payments: one request, one payment, done.
 
-## Our Customizations (shopstr branch)
+## Who it's for
 
-- Direct integration with https://faucet.shopstrhub.store
-- Username-based wallet creation using `/create-custom-identity`
-- Updated `faucet.ts` to handle new JSON response format from the faucet
-- Vite preview configuration for custom domain + HTTPS
-- Production-ready Nginx reverse proxy setup
-- Mimicked Alby UI/flow for Payment Forwarding and Payment Prisms with delta safety to prevent balance forwarding, numbered blue cautions, and debug logs
-- No-username test sub-wallet for Bitcoin Connect, exactly 10k sats, raw errors, rebrand, and clean nuke workflow
+| Audience | What they get |
+|----------|---------------|
+| AI model providers | A template for offering models as pay-per-use 402 endpoints instead of API-key SaaS |
+| Agent builders | A working reference for autonomous payment flows with Stripe Skills for Hermes |
+| Hackathon judges | A live demo of agent-driven commerce — agent picks, agent pays, agent runs |
 
-## Development
+## How it works
+
+```
+User enters a task
+  → Backend recommends a model via OpenRouter MCP (pricing, context, capabilities)
+  → Agent confirms price (dollars, no sats)
+  → Stripe PaymentIntent created (HTTP 402 + www-authenticate: stripe)
+  → Agent pays autonomously with test card (pm_card_visa)
+  → Inference runs, result returned
+```
+
+One scenario, one flow. The agent handles the whole thing.
+
+## Quick start
 
 ```bash
 yarn install
@@ -29,38 +37,43 @@ yarn build
 vite preview --host 0.0.0.0 --port 5173
 ```
 
-For production:
-- Built with `yarn build`
-- Served via Vite preview behind Nginx on Linux VPS
-- HTTPS via Let's Encrypt
-- Always nuke for clean slate before changes (`pkill -9 -f "vite preview" && rm -rf dist ~/.cache/vite`)
+Backend runs on port 8000:
+
+```bash
+cd backend && uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Live demo: `http://34.35.32.224:5173`
+
+## What's in the box
+
+- One scenario: MPP Fetch (Stripe) under 402 Agent Payments
+- OpenRouter MCP integration for model discovery (338+ models including Nemotron 3 Ultra)
+- Backend with `/api/stripe/challenge`, `/api/stripe/payment-intent`, `/api/stripe/pay`, `/api/stripe/execute`
+- Visualization panel: Transaction Log (dollar pricing), Code, Example Prompts, Learn
+- Stripe test mode throughout — no real charges
 
 ## Tech
 
-- React + TypeScript + Vite
-- @getalby/sdk, lightning-tools, Bitcoin Connect
-- Custom faucet backend (see https://github.com/welliv/shopstr-faucet)
+- React + TypeScript + Vite (frontend)
+- FastAPI + uvicorn (backend)
+- Stripe PaymentIntents with test cards
+- OpenRouter MCP for model discovery and pricing
 
-This `shopstr` branch contains all the changes we made together for the Shopstr project. Pushed by agent on behalf of Welliv.
+## Hackathon
 
-## Hermes Agent Accelerated Business Hackathon
+This is a submission for the Hermes Agent Accelerated Business Hackathon (NVIDIA × Stripe × Nous Research).
 
-This demo is tailored for the NVIDIA, Stripe, and Nous Research Hermes Agent Accelerated Business Hackathon.
-It showcases an autonomous AI agent that can:
-- Analyze a task and recommend the optimal AI model (e.g., NVIDIA's Nemotron 3 Ultra) via OpenRouter MCP
-- Autonomously create and pay a Stripe PaymentIntent using the agent's own funds (test card pm_card_visa)
-- Execute the AI inference and return the result — all without human intervention, API keys, or prepaid credits.
+The core idea: Stripe Skills for Hermes let your agent buy what it needs. The agent finds a model, negotiates a price, pays via Stripe MPP, and runs the inference. No human babysitting. No API keys to manage. No prepaid credits to top up.
 
-The demo uses the Stripe MPP (Machine Payments Protocol) flow to enable agent-driven commerce on premium AI models.
+## Status
 
+- Single scenario working end-to-end: task → recommendation → payment → execution
+- Dollar pricing throughout (no sats)
+- Build passing, live at `34.35.32.224:5173`
+- Stripe test mode (pm_card_visa)
+- OpenRouter MCP integration for live model data
 
+## License
 
-## Hermes Agent Accelerated Business Hackathon
-
-This demo is tailored for the NVIDIA, Stripe, and Nous Research Hermes Agent Accelerated Business Hackathon.
-It showcases an autonomous AI agent that can:
-- Analyze a task and recommend the optimal AI model (e.g., NVIDIA's Nemotron 3 Ultra) via OpenRouter MCP
-- Autonomously create and pay a Stripe PaymentIntent using the agent's own funds (test card pm_card_visa)
-- Execute the AI inference and return the result — all without human intervention, API keys, or prepaid credits.
-
-The demo uses the Stripe MPP (Machine Payments Protocol) flow to enable agent-driven commerce on premium AI models.
+MIT

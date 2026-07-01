@@ -1,10 +1,9 @@
 import {
   ExternalLink,
   TestTube,
-  Wallet,
-  Zap,
   Shield,
   Server,
+  CreditCard,
   LightbulbIcon,
 } from "lucide-react";
 import {
@@ -15,8 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlbyHubIcon } from "@/icons/AlbyHubIcon";
-import { AlbyIcon } from "@/icons/AlbyIcon";
 
 export function ProductionWallet() {
   return (
@@ -24,10 +21,10 @@ export function ProductionWallet() {
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Ready for Production?</h2>
         <p className="text-sm text-muted-foreground">
-          The test wallets in this sandbox are great for learning and
-          development, but they have important limitations. When you're ready to
-          deploy your application to real users, you'll need a production
-          Lightning wallet.
+          The test cards in this sandbox are great for learning and
+          development, but they have important limitations. When you're ready
+          to deploy your application to real users, you'll need a production
+          Stripe account.
         </p>
       </div>
 
@@ -36,7 +33,7 @@ export function ProductionWallet() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <TestTube className="h-5 w-5 text-orange-500" />
-              Test Wallets
+              Test Mode
             </CardTitle>
             <CardDescription>Used in this sandbox</CardDescription>
           </CardHeader>
@@ -44,11 +41,11 @@ export function ProductionWallet() {
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
-                <span>Isolated testing ecosystem - no real Bitcoin</span>
+                <span>Isolated testing ecosystem - no real charges</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
-                <span>Cannot send/receive from external wallets</span>
+                <span>Uses <code>pm_card_visa</code> and other test cards</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
@@ -57,13 +54,13 @@ export function ProductionWallet() {
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
                 <span>
-                  Created instantly via{" "}
+                  Provided via{" "}
                   <a
-                    href="https://faucet.nwc.dev"
+                    href="https://dashboard.stripe.com/test"
                     target="_blank"
                     className="underline"
                   >
-                    NWC Faucet
+                    Stripe Dashboard
                   </a>
                 </span>
               </li>
@@ -74,8 +71,8 @@ export function ProductionWallet() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Zap className="h-5 w-5 text-yellow-500" />
-              Production Wallets
+              <CreditCard className="h-5 w-5 text-yellow-500" />
+              Production Mode
             </CardTitle>
             <CardDescription>For real applications</CardDescription>
           </CardHeader>
@@ -83,15 +80,15 @@ export function ProductionWallet() {
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
-                <span>Real bitcoin on the lightning network</span>
+                <span>Live PaymentIntents with real money</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
-                <span>Earn revenue from your users</span>
+                <span>Agents pay for AI inference per-request</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
-                <span>Routing fees based on payment route</span>
+                <span>Per-request billing via MPP</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
@@ -103,10 +100,10 @@ export function ProductionWallet() {
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-semibold">Recommended Production Wallets</h3>
+        <h3 className="font-semibold">Production Setup</h3>
         <p className="text-sm text-muted-foreground">
-          These wallets support the Nostr Wallet Connect (NWC) protocol used in
-          this sandbox.
+          Replace test keys with live Stripe keys to enable real agent payments
+          via the Machine Payments Protocol.
         </p>
       </div>
 
@@ -115,39 +112,39 @@ export function ProductionWallet() {
           <Card className="border-yellow-500/50 bg-yellow-500/5">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <AlbyHubIcon className="h-5 w-5 fill-current" />
-                Alby Hub - Cloud
+                <CreditCard className="h-5 w-5" />
+                Stripe Live Mode
                 <span className="ml-auto text-xs font-normal text-muted-foreground">
                   Recommended
                 </span>
               </CardTitle>
-              <CardDescription>Managed hosting with zero setup</CardDescription>
+              <CardDescription>Live MPP payments with Stripe</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-600">
-                  <Shield className="h-3 w-3" /> Self-custodial
+                  <Shield className="h-3 w-3" /> PCI-compliant
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-xs text-blue-600">
-                  <Server className="h-3 w-3" /> Multiple sub-wallets
+                  <Server className="h-3 w-3" /> Global cards
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-1 text-xs text-purple-600">
-                  <Wallet className="h-3 w-3" /> Full NWC support
+                  <CreditCard className="h-3 w-3" /> Full MPP support
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Get started in minutes with Alby-managed infrastructure. Deploy
-                in seconds, great reliability, one-click updates, and
-                professional support.
+                Switch from test keys to live keys in your Stripe Skills for
+                Hermes configuration. Agents can immediately start paying for
+                AI inference with real PaymentIntents.
               </p>
               <Button asChild variant="default" size="sm" className="gap-2">
                 <a
-                  href="https://getalby.com/subscription/new?coupon=SANDBOX"
+                  href="https://dashboard.stripe.com"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <AlbyIcon className="size-3.5" />
-                  10% off first 3 months
+                  <CreditCard className="size-3.5" />
+                  Open Stripe Dashboard
                 </a>
               </Button>
             </CardContent>
@@ -156,133 +153,35 @@ export function ProductionWallet() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <AlbyHubIcon className="h-5 w-5 fill-current" />
-                Alby Hub - Self Hosted
+                <Server className="h-5 w-5" />
+                Stripe Skills for Hermes
               </CardTitle>
-              <CardDescription>Full control on your own server</CardDescription>
+              <CardDescription>Agent-driven commerce</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-600">
-                  <Shield className="h-3 w-3" /> Self-custodial
+                  <Shield className="h-3 w-3" /> Agent-native
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-xs text-blue-600">
-                  <Server className="h-3 w-3" /> Multiple sub-wallets
+                  <Server className="h-3 w-3" /> MCP-integrated
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-1 text-xs text-purple-600">
-                  <Wallet className="h-3 w-3" /> Full NWC support
+                  <CreditCard className="h-3 w-3" /> No checkout
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Run your own Lightning node with complete control. Deploy on any
-                server, Raspberry Pi, or home hardware.
+                Let your Hermes agent discover services, negotiate prices, and
+                pay for AI inference through Stripe MPP — no API keys, no
+                prepaid credits, no checkout flow.
               </p>
               <Button asChild variant="outline" size="sm" className="gap-2">
                 <a
-                  href="https://getalby.com/alby-hub?ref=sandbox"
+                  href="https://hermes-agent.nousresearch.com/docs/user-guide/skills/optional/payments/payments-stripe-link-cli"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <AlbyHubIcon className="size-3.5" />
-                  Get Alby Hub
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Rizful</CardTitle>
-              <CardDescription>Free, custodial wallet</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-1 text-xs text-orange-600">
-                  Custodial
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-xs text-blue-600">
-                  Multiple vaults
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-600">
-                  Free
-                </span>
-              </div>
-              <p className="text-muted-foreground">
-                Quick setup with NWC support. Supports isolated sub-wallets
-                called "vaults".
-              </p>
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a
-                  href="https://rizful.com?utm_source=sandbox.albylabs.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Visit Rizful
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">CoinOS</CardTitle>
-              <CardDescription>Free, custodial wallet</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-1 text-xs text-orange-600">
-                  Custodial
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-600">
-                  Free
-                </span>
-              </div>
-              <p className="text-muted-foreground">
-                Simple web-based wallet with NWC support. Easy onboarding for
-                beginners.
-              </p>
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a
-                  href="https://coinos.io?utm_source=sandbox.albylabs.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Visit CoinOS
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">lncurl.lol</CardTitle>
-              <CardDescription>Agent-first custodial wallet</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-1 text-xs text-orange-600">
-                  Custodial
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-1 text-xs text-purple-600">
-                  Agent-first
-                </span>
-              </div>
-              <p className="text-muted-foreground">
-                An agent-first custodial Lightning wallet service. Create a
-                wallet with one HTTP call.
-              </p>
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a
-                  href="https://lncurl.lol/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Visit lncurl.lol
+                  Stripe Link CLI Skill
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </Button>
@@ -295,9 +194,9 @@ export function ProductionWallet() {
         <CardContent className="">
           <p className="text-sm text-muted-foreground">
             <LightbulbIcon className="size-4 inline mr-1 mb-1" />
-            The code you write using test wallets works exactly the same with
-            production wallets. Just swap out the NWC connection string and
-            you're ready to handle real payments!
+            The code you write using test cards works exactly the same with
+            production Stripe keys. Just swap from test mode to live mode and
+            your agents are ready to handle real payments!
           </p>
         </CardContent>
       </Card>

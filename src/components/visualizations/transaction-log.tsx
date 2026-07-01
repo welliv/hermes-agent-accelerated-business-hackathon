@@ -83,7 +83,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
         )}
         {transaction.amount && (
           <span className="text-sm font-medium shrink-0">
-            {transaction.amount.toLocaleString()} sats
+            ${(transaction.amount / 100).toFixed(2)}
           </span>
         )}
         <span className="text-sm text-muted-foreground break-all min-w-0">

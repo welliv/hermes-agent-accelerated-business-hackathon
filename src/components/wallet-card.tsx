@@ -350,7 +350,7 @@ function ConnectedState({ wallet }: ConnectedStateProps) {
           </Popover>
         </div>
         <div className="text-2xl font-bold">
-          {wallet.balance?.toLocaleString() ?? "—"} sats
+          {`$${((wallet.balance ?? 0) / 100).toFixed(2)}`}
         </div>
         <div className="text-sm text-muted-foreground">{fiatValue}</div>
         {wallet.lightningAddress && (
@@ -391,7 +391,7 @@ function DisconnectedState({
 }: DisconnectedStateProps) {
   return (
     <>
-      <div className="text-2xl font-bold text-muted-foreground">— sats</div>
+      <div className="text-2xl font-bold text-muted-foreground">—</div>
 
       {hasError && wallet.error && (
         <p className="text-sm text-destructive">{wallet.error}</p>

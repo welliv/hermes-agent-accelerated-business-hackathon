@@ -1,6 +1,4 @@
 export { TransactionLog } from './transaction-log';
-export { FlowDiagram } from './flow-diagram';
-export { BalanceChart } from './balance-chart';
 export { CodeSnippets } from './code-snippets';
 export { PromptsTab } from './prompts-tab';
-export { ProductionWallet } from './production-wallet';
+export { LearnTab } from './learn-tab';

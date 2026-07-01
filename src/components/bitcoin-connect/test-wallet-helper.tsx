@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { TestTube2, Loader2, Copy, Check, ExternalLink } from "lucide-react";
 import { createTestSubWallet } from "@/lib/faucet";
 
-const FAUCET_URL = "https://faucet.shopstrhub.store";
+const FAUCET_URL = "https://dashboard.stripe.com/test";
 
 interface TestWalletHelperProps {
   showExternalPayment?: boolean;
@@ -115,7 +115,7 @@ export function TestWalletHelper({
           <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm" className="w-full">
               <ExternalLink className="mr-2 h-4 w-4" />
-              Open Faucet (shopstrhub.store)
+              Open Stripe Test Dashboard
             </Button>
           </a>
         </div>
