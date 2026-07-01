@@ -1,74 +1,71 @@
 # Narration Script — Hermes Agent Accelerated Business Hackathon
 
-**Time:** ~3 minutes
-**Tone:** Direct, technical, no fluff.
+**Time:** ~3 minutes  
+**Audience:** Hackathon judges  
+**Tone:** Direct. Technical. No fluff.
 
 ---
 
-## [0:00] The problem
+## 0:00 — The problem
 
-AI model providers today have one distribution channel: API-key SaaS. You publish an API endpoint, customers sign up, they manage an API key, and you bill them monthly or by token.
+Right now, AI model providers distribute through one channel: API-key SaaS. A customer signs up, gets a key, pays monthly or by token, and the provider manages billing, access, and refunds for bad requests.
 
-That works for a handful of power users. It does not work for autonomous agents.
+Agents don't fit that model. They don't preload credits. They don't store API keys. They try something once, fail, or move on — and the provider has already incurred compute cost with no settlement path.
 
-Agents don't want to pre-load credits. They don't want to manage API keys. They want to discover a model, pay for exactly what they used, and move on. If the agent fails halfway through a task, the provider shouldn't be chasing refunds or writing off bad debt.
+What's missing is a payment flow built for how agents actually behave: per-request, autonomous, and tied to a successful result.
 
-Right now, that flow doesn't exist. That's what this submission is.
-
----
-
-## [0:30] The framework
-
-This is a framework for AI model providers to turn any model into a pay-per-use HTTP endpoint using Stripe's Machine Payments Protocol — MPP.
-
-The core mechanic is HTTP 402. When an agent hits a protected endpoint, the server returns a payment challenge. The agent autonomously creates a Stripe PaymentIntent, pays with the payment method on file, and gets the result.
-
-No checkout page. No human approval. No prepaid credits.
-
-Model providers just wrap their inference function in a single decorator. Stripe handles the money. Hermes handles the agent context.
+This submission is that flow.
 
 ---
 
-## [1:00] How it accelerates enterprise functions
+## 0:30 — The framework
 
-Think about what this unlocks for enterprises running AI internally:
+The framework turns any model into a pay-per-use HTTP endpoint using Stripe's Machine Payments Protocol — MPP.
 
-**Procurement and provisioning** — Instead of enterprise IT negotiating monthly contracts and distributing API keys across teams, agents bootstrap their own access. Each task, each workflow, each inference call settles automatically. No access requests, no key rotation ceremonies.
+The core mechanic is HTTP 402. When an agent requests a protected endpoint, the server returns a payment challenge instead of the result. The agent autonomously creates a Stripe PaymentIntent, pays with the payment method on file, and receives the inference result.
 
-**Cost accountability** — Every inference request leaves a Stripe payment trail. Finance sees exactly which agent, on which model, for which task, at what price. Spend is tied to actual usage, not seat licenses nobody uses.
+No checkout page. No human approval. No prepaid setup.
 
-**Cross-model orchestration** — An agent can discover models through OpenRouter MCP, get live pricing and context windows, pick the right model per task, and pay per request. The enterprise doesn't pick one model and stick with it. They let the agent optimize.
-
-**Model provider revenue** — Providers stop leaving money on the table from unused capacity. They monetize every request, handle bad debt through Stripe's infrastructure, and don't carry the credit risk.
+A model provider wraps their inference function in one decorator. Stripe handles settlement. Hermes handles the agent context. The provider never touches payment flows.
 
 ---
 
-## [2:00] What the demo shows
+## 1:00 — What this unlocks
 
-The live demo at hermes.shopstrhub.store walks through one scenario end-to-end:
+**Self-service access.** Agents bootstrap their own access on each task. No procurement tickets, no access requests, no key-rotation ceremonies.
 
-1. You type a task into the agent.
-2. The backend queries OpenRouter MCP, scores 338+ models, recommends the best one with pricing.
-3. You confirm the price in dollars.
-4. The server creates a Stripe PaymentIntent challenge (HTTP 402).
-5. The agent pays autonomously using `pm_card_visa` in Stripe test mode.
-6. The inference runs, the response comes back, and you see the full transaction log.
+**Spend tied to actual usage.** Every inference call creates a Stripe payment record. Finance sees which agent, on which model, for which task, at what price — not a flat monthly license.
 
-From the model provider's perspective, they see an endpoint receiving HTTP 402 challenges, Stripe payment confirmations, and successful inference results — fully automated.
+**Cross-model orchestration.** The agent queries OpenRouter MCP for live model rankings and pricing, picks the right model per task, and pays per request. Enterprises don't mandate one model; the agent optimizes.
+
+**Provider revenue without credit risk.** Providers monetize every request. Stripe handles collections, reconciliation, and dispute resolution. The provider carries no bad-debt risk.
 
 ---
 
-## [2:30] What this means
+## 2:00 — What the demo shows
 
-Stripe Skills for Hermes let your agent buy what it needs, provision its own SaaS, and pay for the services it uses.
+The live demo at hermes.shopstrhub.store runs one scenario end-to-end:
 
-For model providers, this is a new distribution channel: not API-key SaaS, but per-request agent commerce. You don't sell subscriptions. You sell access, one inference at a time, with Stripe handling all the payment plumbing.
+1. Enter a task
+2. Backend queries OpenRouter MCP, scores 338+ models, returns a recommendation with dollar pricing
+3. Confirm the price
+4. Server creates a Stripe PaymentIntent challenge (HTTP 402)
+5. Agent pays autonomously using Stripe test card `pm_card_visa`
+6. Inference runs, response returns, transaction logs in dollars
 
-That's the framework. One endpoint, one protocol, zero friction.
+For the model provider, the view is an endpoint receiving 402 challenges, Stripe payment confirmations, and inference results — automated, settled, and logged.
 
 ---
 
-**[END]**
+## 2:30 — What this means
 
-**Demo:** https://hermes.shopstrhub.store
+Stripe Skills for Hermes let an agent buy what it needs, provision its own access, and pay only for what it uses.
+
+For model providers, this is a new distribution channel: not API-key SaaS, but per-request agent commerce. You sell access one inference at a time. Stripe handles the payment plumbing. You focus on the model.
+
+One endpoint. One protocol. No friction.
+
+---
+
+**Demo:** https://hermes.shopstrhub.store  
 **Repo:** https://github.com/welliv/hermes-agent-accelerated-business-hackathon
