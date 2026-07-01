@@ -43,7 +43,7 @@ Backend runs on port 8000:
 cd backend && uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-Live demo: `http://34.35.32.224:5173`
+Live demo: `https://hermes.shopstrhub.store`
 
 ## What's in the box
 
@@ -70,7 +70,7 @@ The core idea: Stripe Skills for Hermes let your agent buy what it needs. The ag
 
 - Single scenario working end-to-end: task → recommendation → payment → execution
 - Dollar pricing throughout (no sats)
-- Build passing, live at `34.35.32.224:5173`
+- Build passing, live at `https://hermes.shopstrhub.store`
 - Stripe test mode (pm_card_visa)
 - OpenRouter MCP integration for live model data
 

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useTransactionStore } from "@/stores";
 import { WALLET_PERSONAS } from "@/types";
 
-const BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const BACKEND_URL = "";
 const DEFAULT_PRICE_CENTS = 50;
 
 export function StripeMPPFetchScenario() {
