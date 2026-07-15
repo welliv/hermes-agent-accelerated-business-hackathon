@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+import json
 import os
 
 # Load environment variables from .env file
@@ -289,6 +290,90 @@ class StripeExecuteRequest(BaseModel):
 async def stripe_health_endpoint():
     """Check Stripe connection status."""
     return stripe_health()
+
+
+class ProtectedRequest(BaseModel):
+    task: str
+    model: str
+    modelName: str
+
+
+@app.api_route("/api/stripe/protected", methods=["GET", "POST"])
+async def protected_endpoint(request: Request):
+    """HTTP 402 protected endpoint. Returns 402 with challenge if unpaid.
+    Accepts payment proof via x-payment-intent-id header on retry."""
+    payment_intent_id = request.headers.get("x-payment-intent-id", "")
+
+    if payment_intent_id:
+        payment = confirm_payment(payment_intent_id)
+        if not payment.get("paid"):
+            return Response(
+                content=json.dumps({"error": "Payment not confirmed", "status": payment.get("status")}),
+                status_code=402,
+                media_type="application/json",
+            )
+        task = payment.get("task", "")
+        model = payment.get("model", "")
+        try:
+            mcp = await get_mcp_client()
+            result = await mcp.chat_completion(
+                model=model, messages=[{"role": "user", "content": task}], max_tokens=1000,
+            )
+            ai_response = None
+            tokens_used = None
+            if isinstance(result, dict) and "choices" in result and result["choices"]:
+                ai_response = result["choices"][0]["message"]["content"]
+                tokens_used = result.get("usage", {}).get("total_tokens")
+            elif isinstance(result, str):
+                ai_response = result
+            return {
+                "success": True,
+                "result": ai_response,
+                "model": model,
+                "tokens_used": tokens_used,
+                "payment_intent_id": payment_intent_id,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # No payment proof — return 402 challenge
+    body = None
+    if request.method == "POST":
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+    task = body.get("task", "") if body else ""
+    model = body.get("model", "") if body else ""
+    model_name = body.get("modelName", "") if body else ""
+
+    challenge = create_challenge(
+        task=task or "AI inference request",
+        model=model or "model",
+        model_name=model_name or "Model",
+        amount_cents=50,
+    )
+    pi_result = create_payment_intent(challenge["challenge_id"])
+    if "error" in pi_result:
+        return Response(
+            content=json.dumps({"error": pi_result["error"]}),
+            status_code=500,
+            media_type="application/json",
+        )
+
+    return Response(
+        content=json.dumps({
+            "error": "Payment required",
+            "challenge_id": challenge["challenge_id"],
+            "payment_intent_id": pi_result.get("payment_intent_id"),
+            "amount_cents": challenge["amount_cents"],
+            "currency": challenge["currency"],
+            "message": f"Pay {challenge['amount_cents']} cents via Stripe MPP. Retry with header x-payment-intent-id: {pi_result.get('payment_intent_id')}",
+        }),
+        status_code=402,
+        headers={"www-authenticate": "stripe"},
+        media_type="application/json",
+    )
 
 
 @app.get("/api/stripe/keys")

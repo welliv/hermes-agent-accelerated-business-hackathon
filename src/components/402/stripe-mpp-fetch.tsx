@@ -272,150 +272,137 @@ function StripeCustomerPanel() {
     const selected = selectedModel === "best" ? recommendation : (recommendation.economical || recommendation);
 
     setIsPaying(true);
-    setError(null);
-    setFlowStep("Creating Stripe payment challenge...");
-    setChallenge(null);
-    setPayment(null);
-    setExecution(null);
+        setError(null);
+        setFlowStep("Requesting protected endpoint...");
+        setChallenge(null);
+        setPayment(null);
+        setExecution(null);
 
-    // Track transaction (amount in cents for dollar display)
-    const priceUsd = parseFloat(selected.costUsd.replace("$", "").replace("~", ""));
-    const amountCents = Math.max(50, Math.round(priceUsd * 100));
-    const txId = addTransaction({
-      type: "payment_sent",
-      status: "pending",
-      fromWallet: "bob",
-      toWallet: "alice",
-      amount: amountCents,
-      description: `Stripe MPP: ${taskInput.slice(0, 50)}`,
-      snippetIds: ["fetch-with-l402"],
-    });
-
-    // Track flow steps
-    const step1Id = addFlowStep({
-      fromWallet: "bob",
-      toWallet: "alice",
-      label: `POST /api/stripe/analyze-and-pay (${selected.model})`,
-      direction: "left",
-      status: "pending",
-      snippetIds: ["fetch-with-l402"],
-    });
-
-    try {
-      // Step 1: Create challenge
-      setFlowStep("Creating Stripe payment challenge...");
-
-      const challengeRes = await fetch(`${BACKEND_URL}/api/stripe/challenge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          task: taskInput,
-          model: selected.model,
-          modelName: selected.modelName,
-          amountCents,
-        }),
-      });
-
-      if (!challengeRes.ok) {
-        throw new Error(`Challenge creation failed: ${challengeRes.status}`);
-      }
-
-      const challengeData = await challengeRes.json();
-      setChallenge({ challenge_id: challengeData.challenge_id, amount_cents: amountCents });
-
-      updateFlowStep(step1Id, {
-        label: `POST /api/stripe/challenge: ${amountCents}\u00a2 challenge created`,
-        status: "success",
-      });
-
-      // Step 2: Create PaymentIntent
-      setFlowStep("Creating Stripe PaymentIntent...");
-      const piRes = await fetch(`${BACKEND_URL}/api/stripe/payment-intent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challenge_id: challengeData.challenge_id }),
-      });
-
-      if (!piRes.ok) {
-        throw new Error(`PaymentIntent creation failed: ${piRes.status}`);
-      }
-
-      const piData = await piRes.json();
-
-      addFlowStep({
-        fromWallet: "alice",
-        toWallet: "bob",
-        label: `PaymentIntent created: ${piData.payment_intent_id}`,
-        direction: "right",
-        status: "success",
-      });
-
-      // Step 3: Agent pays via Stripe test card
-      setFlowStep("Agent paying via Stripe (test card)...");
-      const payRes = await fetch(`${BACKEND_URL}/api/stripe/pay`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentIntentId: piData.payment_intent_id }),
-      });
-
-      if (!payRes.ok) {
-        throw new Error(`Payment failed: ${payRes.status}`);
-      }
-
-      const payData = await payRes.json();
-      if (!payData.paid) {
-        throw new Error(`Payment not succeeded: ${payData.status}`);
-      }
-
-      setPayment({
-        payment_intent_id: payData.payment_intent_id,
-        paid: true,
-        agent_paid: true,
-        amount_cents: amountCents,
-      });
-
-      updateFlowStep(step1Id, {
-        label: `Payment succeeded (${amountCents}¢ / $${(amountCents / 100).toFixed(2)})`,
-        status: "success",
-      });
-
-      addFlowStep({
-        fromWallet: "bob",
-        toWallet: "alice",
-        label: `Stripe PaymentIntent confirmed ✓`,
-        direction: "left",
-        status: "success",
-      });
-
-      // Step 4: Execute AI inference
-      setFlowStep("Executing AI inference (payment verified)...");
-      const execRes = await fetch(`${BACKEND_URL}/api/stripe/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          task: taskInput,
-          model: selected.model,
-          paymentIntentId: payData.payment_intent_id,
-        }),
-      });
-
-      const execData = await execRes.json();
-
-      if (execData.success) {
-        setExecution({
-          model: execData.model,
-          response: execData.result,
-          tokens_used: execData.tokensUsed,
+        // Track transaction (amount in cents for dollar display)
+        const priceUsd = parseFloat(selected.costUsd.replace("$", "").replace("~", ""));
+        const amountCents = Math.max(50, Math.round(priceUsd * 100));
+        const txId = addTransaction({
+          type: "payment_sent",
+          status: "pending",
+          fromWallet: "bob",
+          toWallet: "alice",
+          amount: amountCents,
+          description: `Stripe MPP: ${taskInput.slice(0, 50)}`,
+          snippetIds: ["fetch-with-l402"],
         });
 
-        addFlowStep({
-          fromWallet: "alice",
-          toWallet: "bob",
-          label: `AI response delivered (${execData.tokensUsed || 0} tokens)`,
-          direction: "right",
-          status: "success",
+        // Track flow steps
+        const step1Id = addFlowStep({
+          fromWallet: "bob",
+          toWallet: "alice",
+          label: `POST /api/stripe/protected (${selected.model})`,
+          direction: "left",
+          status: "pending",
+          snippetIds: ["fetch-with-l402"],
         });
-      } else {
+
+        try {
+          // Step 1: Hit protected endpoint — get 402 challenge
+          setFlowStep("Requesting protected endpoint...");
+
+          const protectedRes = await fetch(`${BACKEND_URL}/api/stripe/protected`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              task: taskInput,
+              model: selected.model,
+              modelName: selected.modelName,
+            }),
+          });
+
+          if (protectedRes.status !== 402) {
+            throw new Error(`Expected 402, got ${protectedRes.status}`);
+          }
+
+          const challengeData = await protectedRes.json();
+          if (!challengeData.payment_intent_id) {
+            throw new Error("No payment_intent_id in 402 response");
+          }
+
+          setChallenge({ challenge_id: challengeData.challenge_id, amount_cents: challengeData.amount_cents });
+
+          updateFlowStep(step1Id, {
+            label: `HTTP 402 Payment Required · ${challengeData.amount_cents}\u00a2`,
+            status: "success",
+          });
+
+          addFlowStep({
+            fromWallet: "alice",
+            toWallet: "bob",
+            label: `www-authenticate: stripe · challenge: ${challengeData.challenge_id}`,
+            direction: "right",
+            status: "success",
+          });
+
+          // Step 2: Agent pays via Stripe test card
+          setFlowStep("Agent paying via Stripe (test card)...");
+          const payRes = await fetch(`${BACKEND_URL}/api/stripe/pay`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentIntentId: challengeData.payment_intent_id }),
+          });
+
+          if (!payRes.ok) {
+            throw new Error(`Payment failed: ${payRes.status}`);
+          }
+
+          const payData = await payRes.json();
+          if (!payData.paid) {
+            throw new Error(`Payment not succeeded: ${payData.status}`);
+          }
+
+          setPayment({
+            payment_intent_id: payData.payment_intent_id,
+            paid: true,
+            agent_paid: true,
+            amount_cents: amountCents,
+          });
+
+          addFlowStep({
+            fromWallet: "bob",
+            toWallet: "alice",
+            label: `Payment confirmed: ${payData.payment_intent_id}`,
+            direction: "left",
+            status: "success",
+          });
+
+          // Step 3: Retry protected endpoint with payment proof
+          setFlowStep("Retrying with payment proof...");
+          const retryRes = await fetch(`${BACKEND_URL}/api/stripe/protected`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-payment-intent-id": payData.payment_intent_id,
+            },
+            body: JSON.stringify({
+              task: taskInput,
+              model: selected.model,
+              modelName: selected.modelName,
+            }),
+          });
+
+          const execData = await retryRes.json();
+
+          if (execData.success) {
+            setExecution({
+              model: execData.model,
+              response: execData.result,
+              tokens_used: execData.tokens_used,
+            });
+
+            addFlowStep({
+              fromWallet: "alice",
+              toWallet: "bob",
+              label: `AI result delivered (${execData.tokens_used || 0} tokens)`,
+              direction: "right",
+              status: "success",
+            });
+          } else {
         setExecution({
           model: execData.model,
           response: null,
