@@ -64,7 +64,7 @@ export function ScenarioInfo() {
                               <span className="font-medium text-foreground">
                                 {step.title}
                               </span>{" "}
-                              — {step.description}
+                              {step.description}
                             </li>
                           ))}
                         </ol>

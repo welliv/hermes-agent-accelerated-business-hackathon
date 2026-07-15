@@ -68,17 +68,16 @@ function StripeProviderPanel() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <span>👩‍💼</span>
-          <span>Alice (AI Model Provider): Stripe Protected Endpoint</span>
+          <span>Provider</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
           Alice protects her AI inference endpoint with{" "}
           <code className="text-xs">HTTP 402</code> +{" "}
-          <code className="text-xs">www-authenticate: stripe</code>. When Bob
-          requests inference, the server creates a{" "}
-          <code className="text-xs">Stripe PaymentIntent</code> and the agent
-          pays autonomously — no checkout forms, no human intervention.
+          <code className="text-xs">www-authenticate: stripe</code>. The
+          server creates a payment when a customer requests inference. The
+          agent pays. No checkout.
         </p>
 
         <div className="space-y-2">
@@ -100,9 +99,9 @@ function StripeProviderPanel() {
 
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground">
-            402 Endpoint URL (Agent calls this)
+            402 Endpoint URL
           </label>
-          <div className="relative rounded-lg bg-muted p-3 pr-10">
+          <div className="relative rounded-lg bg-secondary p-3 pr-10">
             <p className="break-all font-mono text-xs leading-relaxed">
               {endpointUrl}
             </p>
@@ -124,9 +123,9 @@ function StripeProviderPanel() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium">Stripe Connection</span>
+            <span className="text-xs font-medium">Stripe status</span>
           </div>
-          <div className="rounded-lg bg-muted/50 p-2">
+          <div className="rounded-lg bg-secondary p-2">
             <p className="text-xs text-muted-foreground">
               {stripeStatus || "Checking..."}
             </p>
@@ -154,6 +153,15 @@ interface Recommendation {
   costUsd: string;
   reason: string;
   contextLength?: number;
+  alternatives?: Array<{
+    id: string;
+    name: string;
+    score: number;
+    contextLength?: number;
+    pricing?: { prompt: string; completion: string };
+    estCostUsd?: number;
+    isOpenSource?: boolean;
+  }>;
   economical?: {
     model: string;
     modelName: string;
@@ -238,6 +246,7 @@ function StripeCustomerPanel() {
         costUsd: data.costUsd,
         reason: data.reason,
         contextLength: data.contextLength,
+        alternatives: data.alternatives || [],
         economical: data.economical
           ? {
               model: data.economical.model,
@@ -252,64 +261,6 @@ function StripeCustomerPanel() {
       setFlowStep(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
-      // Fallback to mock recommendation
-      const task = taskInput.toLowerCase();
-      let recommendationData;
-      if (task.includes("summarize") || task.includes("pdf") || task.includes("document")) {
-        recommendationData = {
-          model: "anthropic/claude-3.5-sonnet",
-          modelName: "Claude 3.5 Sonnet",
-          costSats: 5000,
-          costUsd: "~$3.00",
-          reason: "Best for long-context document analysis and summarization",
-          economical: null,
-        };
-      } else if (task.includes("code") || task.includes("script") || task.includes("python") || task.includes("programming")) {
-        recommendationData = {
-          model: "openai/gpt-4o",
-          modelName: "GPT-4o",
-          costSats: 3000,
-          costUsd: "~$1.80",
-          reason: "Excellent code generation and reasoning capabilities",
-          economical: {
-            model: "openai/gpt-4o-mini",
-            modelName: "GPT-4o-mini",
-            costSats: 500,
-            costUsd: "~$0.30",
-            reason: "Cost-effective for coding tasks",
-            contextLength: 128000,
-          },
-        };
-      } else if (task.includes("creative") || task.includes("write") || task.includes("story") || task.includes("blog")) {
-        recommendationData = {
-          model: "anthropic/claude-3.5-sonnet",
-          modelName: "Claude 3.5 Sonnet",
-          costSats: 2500,
-          costUsd: "~$1.50",
-          reason: "Superior creative writing and natural language flow",
-          economical: null,
-        };
-      } else if (task.includes("analyze") || task.includes("data") || task.includes("reasoning")) {
-        recommendationData = {
-          model: "google/gemini-1.5-pro",
-          modelName: "Gemini 1.5 Pro",
-          costSats: 4000,
-          costUsd: "~$2.40",
-          reason: "Strong analytical reasoning and large context window",
-          economical: null,
-        };
-      } else {
-        recommendationData = {
-          model: "openai/gpt-4o-mini",
-          modelName: "GPT-4o-mini",
-          costSats: 500,
-          costUsd: "~$0.30",
-          reason: "Cost-effective for general purpose tasks",
-          economical: null,
-        };
-      }
-      setRecommendation(recommendationData);
-      setFlowStep(null);
     } finally {
       setIsAnalyzing(false);
     }
@@ -373,7 +324,7 @@ function StripeCustomerPanel() {
       setChallenge({ challenge_id: challengeData.challenge_id, amount_cents: amountCents });
 
       updateFlowStep(step1Id, {
-        label: `POST /api/stripe/challenge — ${amountCents}¢ challenge created`,
+        label: `POST /api/stripe/challenge: ${amountCents}\u00a2 challenge created`,
         status: "success",
       });
 
@@ -474,7 +425,7 @@ function StripeCustomerPanel() {
         addFlowStep({
           fromWallet: "alice",
           toWallet: "bob",
-          label: `Payment verified ✓ — Execution needs OpenRouter API key`,
+          label: `Payment verified. Execution needs OpenRouter API key`,
           direction: "right",
           status: "success",
         });
@@ -513,73 +464,161 @@ function StripeCustomerPanel() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <span>{WALLET_PERSONAS.bob.emoji}</span>
-          <span>Bob (Agent): Autonomous AI Procurement</span>
+          <span>Customer</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
           Bob autonomously discovers the optimal AI model, creates a Stripe
-          PaymentIntent, pays with the test card (pm_card_visa), and executes
-          the inference — all without human intervention.
+          PaymentIntent, pays with the test card, and executes the inference.
+          All automatic.
         </p>
 
         <p className="text-xs text-muted-foreground/60 flex items-center gap-1.5">
-          <Lightbulb className="size-3.5 shrink-0 text-yellow-500/70" /> The agent
-          pays via Stripe test card (pm_card_visa). No human checkout.
+          <Lightbulb className="size-3.5 shrink-0 text-yellow-500/70" /> Pays via Stripe test card. No human checkout.
         </p>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* Interactive Task Input Section */}
-        <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+        <div className="space-y-3 p-3 rounded-lg border border-border bg-card shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">AI Task Assistant (Stripe MPP)</span>
+            <span className="text-sm font-medium">Task Assistant</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Enter a task → Get model recommendation + price → Confirm → Pay via
-            Stripe MPP
+            Describe your task. Pick a model. Pay. Run.
           </p>
 
           <textarea
             value={taskInput}
             onChange={(e) => setTaskInput(e.target.value)}
-            placeholder="e.g., 'Summarize a 50-page PDF' or 'Write a Python script to scrape a website'"
+            placeholder={`e.g. 'Summarise a long document' or 'Write a CSV parser'`}
             rows={3}
             className="w-full font-mono text-xs p-2 rounded bg-background border"
             disabled={isAnalyzing || isPaying}
           />
 
           {recommendation !== null && !isPaying ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {/* Model tier selector */}
               {recommendation.economical && (
-                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Choose Model:</span>
-                    <select
-                      value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value as "best" | "economical")}
-                      className="text-xs px-2 py-1 bg-white dark:bg-gray-800 border rounded"
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Tier:</span>
+                  <div className="flex bg-secondary rounded-md p-0.5">
+                    <button
+                      onClick={() => setSelectedModel("best")}
+                      className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                        selectedModel === "best"
+                          ? "bg-background shadow-sm font-medium"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      <option value="best">🏆 Best Quality - {recommendation.modelName}</option>
-                      <option value="economical">💰 Most Economical - {recommendation.economical.modelName}</option>
-                    </select>
+                      🏆 Best
+                    </button>
+                    <button
+                      onClick={() => setSelectedModel("economical")}
+                      className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                        selectedModel === "economical"
+                          ? "bg-background shadow-sm font-medium"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      💰 Budget
+                    </button>
                   </div>
                 </div>
               )}
-              <div className="p-2 bg-primary/10 rounded text-xs">
-                <div className="flex items-center gap-1 mb-1">
-                  <Zap className="h-3 w-3 text-primary" />
-                  <span className="font-medium">
-                    {selectedModel === "best" ? "🏆 Best Quality" : "💰 Most Economical"}
-                  </span>
-                </div>
-                <div className="font-mono text-[10px] text-muted-foreground">
-                  Model: {selectedModel === "best" ? recommendation.modelName : recommendation.economical?.modelName || recommendation.modelName}<br />
-                  Est. Cost: {selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd}<br />
-                  Reason: {selectedModel === "best" ? recommendation.reason : recommendation.economical?.reason || recommendation.reason}
-                </div>
-              </div>
+
+              {/* Selected model card */}
+              {(() => {
+                const sel = selectedModel === "best" ? recommendation : (recommendation.economical || recommendation);
+                const ctx = sel.contextLength;
+                const ctxLabel = ctx
+                  ? ctx >= 1_000_000
+                    ? `${(ctx / 1_000_000).toFixed(1)}M`
+                    : ctx >= 1_000
+                      ? `${(ctx / 1_000).toFixed(0)}K`
+                      : `${ctx}`
+                  : null;
+                return (
+                  <div className="p-3 bg-card rounded-md border border-border shadow-sm space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">{sel.modelName}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono truncate">{sel.model}</div>
+                      </div>
+                      <span className="text-sm font-bold text-primary whitespace-nowrap tabular-nums">
+                        {sel.costUsd}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ctxLabel && (
+                        <span className="px-1.5 py-0.5 bg-accent/50 rounded text-[10px] font-medium">
+                          📐 {ctxLabel} ctx
+                        </span>
+                      )}
+                      {sel.reason.match(/coding index (\d+)/) && (
+                        <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
+                          ⚡ Coding {RegExp.$1}
+                        </span>
+                      )}
+                      {sel.reason.match(/intelligence (\d+)/) && (
+                        <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
+                          🧠 IQ {RegExp.$1}
+                        </span>
+                      )}
+                      {sel.reason.match(/rank #(\d+)/) && (
+                        <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 rounded text-[10px] font-medium">
+                          🏅 Rank #{RegExp.$1}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {sel.reason}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Alternatives table */}
+              {recommendation.alternatives && recommendation.alternatives.length > 0 && (
+                <details className="group">
+                  <summary className="text-xs cursor-pointer text-muted-foreground hover:text-foreground transition-colors py-1">
+                    {recommendation.alternatives.length} alternative models available
+                  </summary>
+                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                    {recommendation.alternatives.map((alt) => {
+                      const altCtx = alt.contextLength;
+                      const altCtxLabel = altCtx
+                        ? altCtx >= 1_000_000
+                          ? `${(altCtx / 1_000_000).toFixed(1)}M`
+                          : `${(altCtx / 1_000).toFixed(0)}K`
+                        : "—";
+                      const altCost = alt.estCostUsd !== undefined ? `$${alt.estCostUsd.toFixed(4)}` : "—";
+                      return (
+                        <div
+                          key={alt.id}
+                          className="flex items-center justify-between p-2 bg-secondary rounded text-xs hover:bg-secondary/70 transition-colors"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium truncate">{alt.name}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono truncate">{alt.id}</div>
+                          </div>
+                          <div className="flex items-center gap-3 ml-2 shrink-0">
+                            <span className="text-[10px] text-muted-foreground">{altCtxLabel}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">{altCost}</span>
+                            <span className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-medium">
+                              Score {alt.score}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
+
               <Button
                 onClick={handleConfirmAndPay}
                 disabled={isPaying}
@@ -589,12 +628,12 @@ function StripeCustomerPanel() {
                 {isPaying ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing Stripe MPP payment...
+                    Processing payment...
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="mr-2 h-4 w-4" />
-                    Confirm & Pay {selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd}
+                    Pay {selectedModel === "best" ? recommendation.costUsd : recommendation.economical?.costUsd || recommendation.costUsd}
                   </>
                 )}
               </Button>
@@ -609,12 +648,12 @@ function StripeCustomerPanel() {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing with OpenRouter MCP...
+                  Analysing with OpenRouter MCP...
                 </>
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Analyze & Recommend Model
+                  Analyse task
                 </>
               )}
             </Button>
@@ -622,7 +661,7 @@ function StripeCustomerPanel() {
 
           {/* Flow progress */}
           {flowStep && isPaying && (
-            <div className="p-2 bg-muted/50 rounded text-xs space-y-1">
+            <div className="p-2 bg-secondary rounded text-xs space-y-1">
               <div className="flex items-center gap-1.5">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 <span className="text-muted-foreground">{flowStep}</span>
@@ -642,14 +681,14 @@ function StripeCustomerPanel() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
                 <CheckCircle2 className="h-4 w-4" />
-                <span className="font-medium">Agent Paid & Executed Successfully</span>
+                <span className="font-medium">Paid and run</span>
               </div>
 
               {/* Payment Receipt */}
               <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800 text-xs space-y-1">
                 <div className="flex items-center gap-1.5 font-medium">
                   <DollarSign className="h-3 w-3" />
-                  Stripe Payment Receipt
+                  Payment receipt
                 </div>
                 <div className="font-mono text-[10px] text-muted-foreground">
                   PaymentIntent: {payment!.payment_intent_id}
@@ -667,10 +706,10 @@ function StripeCustomerPanel() {
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground flex items-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
-                    AI Response ({execution.model})
+                    Result ({execution.model})
                     {execution.tokens_used && ` · ${execution.tokens_used} tokens`}
                   </label>
-                  <div className="rounded-lg bg-muted p-3 max-h-64 overflow-y-auto">
+                  <div className="rounded-lg bg-secondary p-3 max-h-64 overflow-y-auto">
                     <pre className="text-xs whitespace-pre-wrap break-all leading-relaxed">
                       {execution.response.length > 2000
                         ? execution.response.slice(0, 2000) + "\n…(truncated)"
@@ -683,14 +722,13 @@ function StripeCustomerPanel() {
               {execution && !execution.response && (
                 <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-2 text-xs text-yellow-800 dark:text-yellow-200">
                   <ShieldCheck className="h-3.5 w-3.5 inline mr-1" />
-                  Payment verified ✅ — AI execution needs a valid OpenRouter
-                  API key to produce a response. The autonomous Stripe payment
-                  flow is fully working.
+                  Payment verified. Execution needs an
+                  OpenRouter API key.
                 </div>
               )}
 
               <Button onClick={reset} variant="outline" className="w-full" size="sm">
-                Start New Task
+                New task
               </Button>
             </div>
           )}

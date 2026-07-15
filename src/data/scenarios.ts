@@ -3,11 +3,11 @@ import type { Scenario, ScenarioComplexity } from "@/types";
 const unorderedScenarios: Scenario[] = [
   {
     id: "stripe-mpp-fetch",
-    title: "MPP Fetch (Stripe)",
+    title: "MPP Fetch",
     description:
-      "An autonomous agent discovers the optimal AI model, creates a Stripe PaymentIntent, pays with the test card (pm_card_visa), and executes the inference — all without human intervention.",
+      "The agent picks the best model, pays via Stripe, and runs the task. No human in the loop.",
     education:
-      "Stripe Skills for Hermes let AI model providers wrap any model endpoint in a 402 payment gate using Stripe as the rail. When an agent requests inference, the server returns HTTP 402 with www-authenticate: stripe. The agent autonomously creates a PaymentIntent, pays with pm_card_visa (Stripe's test card), and the server verifies payment, runs the model via OpenRouter MCP, and returns the result. Built for the NVIDIA × Stripe × Nous Research Hermes Agent Hackathon — demonstrating how agents procure premium AI without human intervention.",
+      "Any model endpoint can be wrapped in a payment gate. The agent requests inference. The server returns a Stripe payment challenge. The agent pays and gets the result. Built for the Hermes Agent Hackathon.",
     icon: "💳",
     section: "402",
     complexity: "simple",
@@ -15,29 +15,29 @@ const unorderedScenarios: Scenario[] = [
     snippetIds: ["fetch-with-l402"],
     howItWorks: [
       {
-        title: "Provider publishes a priced model endpoint",
+        title: "Provider sets a price per request",
         description:
-          "The provider exposes an AI model (e.g., Nemotron 3 Ultra) behind an MPP-enabled endpoint with a per-request price.",
+          "The provider exposes a model endpoint with a per request price.",
       },
       {
-        title: "Agent submits a task",
+        title: "Customer describes the task",
         description:
-          "The agent sends a task. The backend analyzes it and recommends the optimal model with its price.",
+          "The customer sends a task. The backend analyses it and recommends the best model at its price.",
       },
       {
-        title: "Server returns 402 + Stripe challenge",
+        title: "Server asks for payment",
         description:
-          "The server responds with HTTP 402 and www-authenticate: stripe, quoting the model's cost.",
+          "The server returns a Stripe payment challenge quoting the cost.",
       },
       {
-        title: "Agent pays autonomously",
+        title: "Agent pays",
         description:
-          "The agent creates a Stripe PaymentIntent and confirms it with pm_card_visa — no checkout form, no human in the loop.",
+          "The agent creates a Stripe PaymentIntent and confirms it. No checkout form. No human in the loop.",
       },
       {
-        title: "Model runs, result returned",
+        title: "Model runs, result delivered",
         description:
-          "The server verifies the PaymentIntent succeeded, executes the model via OpenRouter MCP, and returns the AI response. Provider gets paid via Stripe per request.",
+          "The server verifies the payment, runs the model, and returns the result. The provider gets paid per request.",
       },
     ],
     links: [
@@ -56,11 +56,11 @@ const unorderedScenarios: Scenario[] = [
     ],
     prompts: [
       {
-        title: "Build an Agent That Procures AI via Stripe MPP",
+        title: "Build an agent that buys AI via Stripe MPP",
         description:
-          "Create a full flow where an autonomous agent discovers, pays for, and consumes AI inference with zero human intervention.",
+          "Full flow: an agent discovers, pays for, and runs AI inference with no human.",
         prompt:
-          "Build a minimal FastAPI server that: 1) Accepts a task and recommends the optimal model (Nemotron 3 Ultra, GPT-4o, Claude, etc.) with pricing, 2) Returns HTTP 402 with www-authenticate: stripe if not paid, 3) Creates a Stripe PaymentIntent on challenge, 4) Verifies payment on /verify, 5) Calls OpenRouter MCP to run the model and returns the result. Include a client script that hits the endpoint, pays with pm_card_visa, and prints the model output.",
+          "Build a FastAPI server that accepts a task, recommends the best model with pricing, returns a Stripe payment challenge, verifies payment, runs the model, and returns the result. Include a client script that pays via pm_card_visa and displays the output.",
       },
     ],
   },

@@ -51,7 +51,7 @@ const externalLinks = [
 ];
 
 const sectionLabels: Record<string, string> = {
-  "402": "402 · Agent Payments (Stripe MPP)",
+  "402": "402 · Agent Payments",
 };
 
 export function AppSidebar() {
@@ -70,9 +70,9 @@ export function AppSidebar() {
         <div className="flex items-center gap-2">
           <BotIcon className="size-6" />
           <div>
-            <h1 className="font-semibold">Stripe MPP Sandbox</h1>
+            <h1 className="font-semibold">Stripe MPP</h1>
             <p className="text-xs text-muted-foreground">
-              MPP-Paid AI Inference for Agents
+              Agents pay for AI. Per request.
             </p>
           </div>
         </div>
@@ -87,8 +87,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={!scenarioId}>
                   <Link to="/">
-                    <span>👋</span>
-                    <span>Getting Started</span>
+                    <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

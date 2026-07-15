@@ -224,7 +224,6 @@ def pay_with_test_card(payment_intent_id: str) -> Dict[str, Any]:
         intent = stripe.PaymentIntent.confirm(
             payment_intent_id,
             payment_method="pm_card_visa",  # Stripe's built-in test card
-            return_url="http://34.35.32.224:5173/stripe-mpp-fetch",
         )
 
         result = {

@@ -5,54 +5,52 @@ import { scenarios } from "@/data/scenarios";
 
 const slides = [
   {
-    title: "Stripe Skills for Hermes: Agent Buys AI Inference",
+    title: "Agents buy AI. No API keys.",
     content: (
       <div className="flex flex-col items-center gap-6 text-center">
         <span className="text-7xl">💳</span>
         <p className="text-lg text-muted-foreground max-w-xl">
-          Autonomous agents discover, pay for, and consume AI models via Stripe
-          MPP — no checkout, no API keys, no prepaid credits.
+          An agent finds the right model, pays per request, and gets the
+          result. No signup. No prepaid credits.
         </p>
         <p className="text-sm text-muted-foreground">
-          Built for the NVIDIA × Stripe × Nous Research Hermes Agent Hackathon
+          Hermes Agent Hackathon: NVIDIA, Stripe, Nous Research
         </p>
       </div>
     ),
   },
   {
-    title: "How It Works",
+    title: "How it works",
     content: (
       <div className="flex flex-col items-center gap-6 text-center">
         <span className="text-7xl">⚡</span>
         <p className="text-lg text-muted-foreground max-w-xl">
-          1. Agent submits a task → backend recommends optimal model (Nemotron 3
-          Ultra, GPT-4o, etc.) with price
+          1. Describe the task. The backend recommends the best model and its
+          price.
         </p>
         <p className="text-lg text-muted-foreground max-w-xl">
-          2. Server returns HTTP 402 + Stripe challenge → agent creates
-          PaymentIntent, pays with pm_card_visa (test card)
+          2. The server asks for payment. Stripe processes it.
         </p>
         <p className="text-lg text-muted-foreground max-w-xl">
-          3. Server verifies payment, runs model via OpenRouter MCP, returns
-          result → provider paid per request
+          3. Payment confirmed. The model runs. You get the result.
         </p>
         <p className="text-sm text-muted-foreground">
-          Zero human intervention. Zero API key management. Per-request billing.
+          No human in the loop. No API keys to manage. Pay only for what you
+          use.
         </p>
       </div>
     ),
   },
   {
-    title: "Ready to Try",
+    title: "Try it",
     content: (
       <div className="flex flex-col items-center gap-6 text-center">
         <span className="text-7xl">🚀</span>
         <p className="text-lg text-muted-foreground max-w-xl">
-          Connect wallets (Alice as provider, Bob as agent) to unlock the live
-          demo.
+          The demo is live. Type a task below.
         </p>
         <p className="text-sm text-muted-foreground">
-          Test wallets provided via Stripe in test mode
+          Runs on Stripe test mode. No real money.
         </p>
       </div>
     ),

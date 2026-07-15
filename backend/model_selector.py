@@ -225,7 +225,7 @@ def _detect_modifiers(task: str) -> List[str]:
 def _build_search_queries(task: str, task_types: List[str]) -> List[str]:
     """Build MCP search queries based on the task description."""
     queries = []
-    
+
     if "coding" in task_types:
         queries.extend(["coder", "code", "codestral", "devstral"])
     if "reasoning" in task_types:
@@ -236,12 +236,40 @@ def _build_search_queries(task: str, task_types: List[str]) -> List[str]:
         queries.extend(["vision", "multimodal", "gemini"])
     if "long_context" in task_types:
         queries.extend(["gemini", "claude", "qwen"])
-    
+
     # General fallback — use broad terms that won't pull coding-specific models
     if not queries:
         queries = ["instruct", "chat", "llama", "gpt", "claude"]
-    
+
     return queries
+
+
+# Explicit top-coding/agentic model preference list.
+# Used to keep proven coding models at the top even if broad MCP search
+# ranks a cheap/free newcomer first.
+_TOP_CODING_IDS = [
+    "openai/gpt-5.6-sol",
+    "openai/gpt-5.6-terra",
+    "openai/gpt-5.5",
+    "openai/gpt-5.4",
+    "anthropic/claude-fable-5",
+    "anthropic/claude-sonnet-5",
+    "qwen/qwen3-coder-next",
+    "qwen/qwen3-coder",
+    "qwen/qwen3-coder:free",
+    "qwen/qwen3-coder-480b-a35b-instruct",
+    "qwen/qwen2.5-coder-32b-instruct",
+    "kwaipilot/kat-coder-pro-v2",
+    "mistral/codestral",
+    "mistral/devstral",
+    "deepseek/deepseek-reasoner",
+    "deepseek/deepseek-chat",
+]
+
+
+def _is_top_coding(m: Dict) -> bool:
+    mid = (m.get("id") or "").lower()
+    return mid in [x.lower() for x in _TOP_CODING_IDS]
 
 
 # ── Model filtering & scoring (from live MCP data) ──────────────────────────
@@ -383,8 +411,10 @@ def _relevance_score(m: Dict, task: str, task_types: List[str], modifiers: List[
     
     # ── Task-specific relevance ──
     if "coding" in task_types:
-        if any(kw in mid or kw in name for kw in ["coder", "codex", "codestral", "devstral"]):
+        if any(kw in mid or kw in name for kw in ["coder", "codex", "codestral", "devstral", "-code", "_code"]):
             score += 30
+        if _is_top_coding(m):
+            score += 25
         if any(kw in desc for kw in ["coding agent", "code generation", "software engineer",
                                       "agentic coding", "programming", "code completion"]):
             score += 25
@@ -691,7 +721,7 @@ def _fallback_recommendation(task: str) -> Dict[str, Any]:
         "modelName": "OpenAI: GPT-4o-mini",
         "costSats": 3,
         "costUsd": "$0.0030",
-        "reason": "Fallback (MCP unavailable) — cost-effective general model",
+        "reason": "Fallback (MCP unavailable). Cost effective general model",
         "contextLength": 128000,
         "alternatives": [],
         "economical": None,

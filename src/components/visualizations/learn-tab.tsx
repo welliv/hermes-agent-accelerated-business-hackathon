@@ -25,7 +25,7 @@ export function LearnTab() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">How It Works</h2>
+          <h2 className="text-lg font-semibold">How it works</h2>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
           {currentScenario.education}
@@ -36,7 +36,7 @@ export function LearnTab() {
       {steps.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Step-by-Step Flow
+            Steps
           </h3>
           <div className="space-y-3">
             {steps.map((step, index) => (
@@ -62,20 +62,20 @@ export function LearnTab() {
       {/* Key Concepts */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Key Concepts
+          Concepts
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Server className="h-4 w-4 text-primary" />
-                MPP (Machine Payments Protocol)
+                MPP
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
                 An open standard for agent-to-agent commerce. Wraps any HTTP
-                endpoint in a 402 payment gate — the server returns a payment
+                endpoint in a 402 payment gate. The server returns a payment
                 challenge, the agent pays, and the resource is delivered. No API
                 keys, no prepaid credits.
               </p>
@@ -86,7 +86,7 @@ export function LearnTab() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <CreditCard className="h-4 w-4 text-primary" />
-                Stripe PaymentIntent
+                PaymentIntent
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -103,7 +103,7 @@ export function LearnTab() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Bot className="h-4 w-4 text-primary" />
-                Autonomous Agent
+                Agent pays
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -111,7 +111,7 @@ export function LearnTab() {
                 An AI agent that discovers, pays for, and consumes services
                 without human intervention. The agent receives a 402 challenge,
                 creates and confirms a Stripe payment, and retries the request
-                with proof of payment — all programmatically.
+                with proof of payment. All programmatic.
               </p>
             </CardContent>
           </Card>
@@ -120,14 +120,14 @@ export function LearnTab() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <ShieldCheck className="h-4 w-4 text-primary" />
-                Per-Request Billing
+                Pay per request
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
                 The provider gets paid for each individual request. No
                 subscriptions, no API keys to manage, no prepaid credits. The
-                agent pays exactly what each inference costs — transparent and
+                agent pays exactly what each inference costs. Transparent and
                 granular.
               </p>
             </CardContent>
@@ -139,7 +139,7 @@ export function LearnTab() {
       {currentScenario.links && currentScenario.links.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Resources
+            Links
           </h3>
           <div className="grid gap-2 sm:grid-cols-2">
             {currentScenario.links.map((link, index) => (

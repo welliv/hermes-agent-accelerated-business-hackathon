@@ -46,8 +46,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Shopstr AI Task Assistant Backend",
-    description="Backend for AI Model Provider/Customer MPP demo with OpenRouter integration",
+    title="Shopstr",
+    description="MPP demo backend",
     version="1.0.0",
     lifespan=lifespan,
 )
